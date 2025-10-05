@@ -45,10 +45,8 @@ The newly scaffolded workspace should include the following structure:
 ├── development-services/
 │   └── .gitkeep        ← Placeholder (dev-only services like Ollama, mocks)
 │
-└── tmp/                ← Runtime data directory (gitignored)
-    ├── .redis/
-    ├── .ollama/
-    └── (other runtime data)
+└── tmp/                ← Runtime data directory (gitignored, created at runtime)
+    └── .gitkeep
 ```
 
 ---
@@ -129,15 +127,15 @@ The agent should copy **ALL** files from the template repository to the new work
    - `.gitkeep`
 
 9. **`tmp/` directory:**
-   - Create the directory structure but do not copy any actual data
-   - Create subdirectories like `.redis/`, `.ollama/` as empty placeholders
+   - Copy only the `.gitkeep` file
+   - Do NOT create subdirectories (they will be created automatically by Docker volumes at runtime)
 
 ### ❌ Files NOT to Copy:
 
 1. **`README.md`** — Do not copy if already exists in target workspace
 2. **`INSTRUCTIONS.md`** — Never copy this file to the target workspace
 3. **`.git/` directory** — Never copy version control data
-4. **`tmp/` runtime data** — Create directory structure only, not the data
+4. **`tmp/` subdirectories** — Only copy `tmp/.gitkeep`, NOT any subdirectories like `.redis/`, `.ollama/` (created at runtime by Docker)
 
 ---
 
@@ -180,8 +178,8 @@ Follow this order for optimal scaffolding:
 5. **Copy development services:**
    - Copy complete `development-services/` subdirectories (e.g., `openai-api/`)
 
-6. **Create tmp structure:**
-   - Create empty subdirectories like `tmp/.redis/`, `tmp/.ollama/`
+6. **Copy tmp directory:**
+   - Copy `tmp/.gitkeep` only (runtime subdirectories will be created by Docker volumes)
 
 7. **Final summary:**
    - Output a comprehensive list of all created files and directories
@@ -199,7 +197,7 @@ When an agent receives a scaffold prompt referencing this INSTRUCTIONS.md, it sh
    - Copy everything EXCEPT `README.md` (if exists), `INSTRUCTIONS.md`, `.git/`, and `tmp/` data
 5. **Preserve placeholders** — do not resolve variables like `${serviceName}`
 6. **Handle conflicts gracefully** — never overwrite `README.md` if it exists
-7. **Create empty directories** for `tmp/` subdirectories and placeholder `.gitkeep` files
+7. **Copy `.gitkeep` placeholder files** as found in the template (do NOT create `tmp/` subdirectories)
 8. **Understand the marker system** in docker-compose files for future service additions
 9. **Output a complete summary** of all created files and directories at the end
 

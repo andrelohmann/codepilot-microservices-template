@@ -217,12 +217,12 @@ Instead of directly cloning this repository, use it as an **external scaffold te
 
 1. **Create a new empty directory** for your project
 2. **Open it in VS Code**
-3. **Open the Agent Mode Chat** (Copilot)
+3. **Open the Agent Mode Chat** (Copilot) and **select the "Grok Code Fast 1" model**
 4. **Run the following prompt:**
 
 ```text
 Scaffold a new microservices workspace by fetching and following the instructions from:
-https://github.com/andrelohmann/copilot-microservices-template/INSTRUCTIONS.md
+https://github.com/andrelohmann/codepilot-microservices-template/blob/main/INSTRUCTIONS.md
 
 Important instructions:
 - Fetch the INSTRUCTIONS.md file from the URL above
