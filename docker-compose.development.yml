@@ -1,0 +1,70 @@
+x-env: &default-env
+  env_file: [./config/.env]
+
+services:
+
+  # ── Backing-Services ─────────────────────────────────────────────
+  ##<<BACKING_SERVICES>>
+  # (The Agent will fill in backing services here for development related configurations)
+  ##</BACKING_SERVICES>
+
+  # ── Services ─────────────────────────────────────────────────────
+  ##<<SERVICES>>
+  # (The Agent will fill in services here for development related configurations)
+
+  # Example API service
+  api:
+    volumes:
+      # Mount the root folder that contains .git
+      - .:/workspace
+
+  # Example App service
+  app:
+    volumes:
+      # Mount the root folder that contains .git
+      - .:/workspace
+
+  ##<</SERVICES>>
+      
+  # ── Development-Services ─────────────────────────────────────────────
+  ##<<DEVELOPMENT_SERVICES>>
+  # (The Agent will fill in development services here for development related configurations)
+
+  # Ollama OpenAI API service
+  openai-api:
+    image: ollama/ollama:latest
+    <<: *default-env
+    ports:
+        - 11434:11434
+    volumes:
+        - ./tmp/.ollama:/root/.ollama
+        - ./development-services/openai-api:/opt/openai-api
+    environment:
+      - OLLAMA_HOST=0.0.0.0
+      - OLLAMA_ORIGINS=*
+      - OLLAMA_MODELS=/root/.ollama
+      - CUDA_VISIBLE_DEVICES=${OLLAMA_GPU_DEVICES:-0}
+      - NVIDIA_VISIBLE_DEVICES=${OLLAMA_GPU_DEVICES:-0}
+      - NVIDIA_DRIVER_CAPABILITIES=compute,utility
+      - LD_LIBRARY_PATH=/usr/local/nvidia/lib:/usr/local/nvidia/lib64
+    container_name: openai-api
+    pull_policy: always
+    tty: true
+    restart: always
+    entrypoint: ["/bin/sh", "/opt/openai-api/entrypoint.sh"]
+    networks:
+      - appnet
+    healthcheck:
+      test: ["CMD","nc","-z","localhost","11434"]
+      interval: 5s
+      timeout: 3s
+      retries: 60
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              device_ids: ['${OLLAMA_GPU_DEVICES:-0}']
+              capabilities: [gpu]
+
+  ##</DEVELOPMENT_SERVICES>
