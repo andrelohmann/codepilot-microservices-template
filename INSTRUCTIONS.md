@@ -5,6 +5,21 @@
 
 ---
 
+## ⚠️ CRITICAL: Do NOT Clone the Repository
+
+**IMPORTANT:** You must **NOT** clone the template repository using `git clone` or any git commands.
+
+Instead:
+- ✅ **Fetch individual files** from the repository using HTTP/HTTPS requests
+- ✅ **Copy file contents directly** to the new workspace
+- ✅ **Create files programmatically** with the fetched content
+- ❌ **DO NOT use git clone** — this would copy the entire git history
+- ❌ **DO NOT copy the .git/ directory** — the new workspace needs its own git repository
+
+**Why?** The new workspace should be a clean copy of the template structure without the template's git history. Cloning would bring unwanted git metadata and history.
+
+---
+
 ## 📁 Desired Directory Structure & Core Components
 
 The newly scaffolded workspace should include the following structure:
@@ -94,47 +109,88 @@ my-new-service:
 
 ## 📦 Complete File Copying Instructions
 
+**CRITICAL:** The agent must copy files **EXACTLY AS-IS** from the template repository. Do NOT modify, rename, or edit any file contents.
+
+### 🚨 File Copying Rules:
+
+1. **Exact Copy Only**: Copy file contents byte-for-byte without any modifications
+2. **Preserve File Names**: Use the exact same filename from the source
+3. **Preserve File Structure**: Maintain the exact directory structure
+4. **No Content Editing**: Do NOT change file contents, even if they seem incorrect or incomplete
+5. **No Interpretation**: Do NOT interpret placeholders, comments, or instructions within files
+6. **No Summarization**: Do NOT summarize or abbreviate file contents
+7. **Binary Files**: Copy binary files (images, etc.) exactly as-is
+
+### File Fetching Method:
+
+Use GitHub raw file URLs to fetch exact file contents:
+```
+https://raw.githubusercontent.com/andrelohmann/copilot-microservices-template/main/{filepath}
+```
+
+For directory listings, use GitHub API:
+```
+https://api.github.com/repos/andrelohmann/copilot-microservices-template/contents/{dirpath}
+```
+
 The agent should copy **ALL** files from the template repository to the new workspace, with the following exceptions:
 
-### ✅ Files to Copy:
+### ✅ Files to Copy (Exact Copy Required):
 
 1. **Root level files:**
-   - `.gitignore`
-   - `LICENSE`
-   - `docker-compose.yml`
-   - `docker-compose.development.yml`
+   - `.gitignore` → copy to `.gitignore`
+   - `LICENSE` → copy to `LICENSE`
+   - `docker-compose.yml` → copy to `docker-compose.yml`
+   - `docker-compose.development.yml` → copy to `docker-compose.development.yml`
 
 2. **`.devcontainer/` directory:**
-   - All files including `.gitkeep`
+   - Fetch all files from `https://api.github.com/repos/andrelohmann/copilot-microservices-template/contents/.devcontainer`
+   - Copy each file to `.devcontainer/{filename}` with exact content
+   - Include `.gitkeep`
 
 3. **`.github/` directory** (source: `templates/.github/`):
-   - Copy from `templates/.github/` to `.github/` in the new workspace
-   - `copilot-instructions.md`
-   - `instructions/` (all files)
-   - `prompts/` (all *.prompt.md files)
-   - `chatmodes/` (all *.chatmode.md files)
+   - Fetch from `templates/.github/` in repository
+   - Copy to `.github/` in new workspace (root level)
+   - Preserve all subdirectories and files:
+     - `templates/.github/copilot-instructions.md` → `.github/copilot-instructions.md`
+     - All files in `templates/.github/instructions/` → `.github/instructions/{filename}`
+     - All files in `templates/.github/prompts/` → `.github/prompts/{filename}`
+     - All files in `templates/.github/chatmodes/` → `.github/chatmodes/{filename}`
 
 4. **`.vscode/` directory** (source: `templates/.vscode/`):
-   - Copy from `templates/.vscode/` to `.vscode/` in the new workspace
-   - `extensions.json`
-   - `settings.json`
+   - Fetch from `templates/.vscode/` in repository
+   - Copy to `.vscode/` in new workspace (root level)
+   - Files:
+     - `templates/.vscode/extensions.json` → `.vscode/extensions.json`
+     - `templates/.vscode/settings.json` → `.vscode/settings.json`
 
 5. **`config/` directory:**
-   - `.env.example`
+   - `config/.env.example` → copy to `config/.env.example`
 
 6. **`services/` directory:**
-   - `.gitkeep` (placeholder only, no example services)
+   - `services/.gitkeep` → copy to `services/.gitkeep`
 
 7. **`backing-services/` directory:**
-   - `.gitkeep` (placeholder only)
+   - `backing-services/.gitkeep` → copy to `backing-services/.gitkeep`
 
 8. **`development-services/` directory:**
-   - All subdirectories and files (e.g., `openai-api/entrypoint.sh`)
-   - `.gitkeep`
+   - Recursively copy all subdirectories and files
+   - Example: `development-services/openai-api/entrypoint.sh` → `development-services/openai-api/entrypoint.sh`
+   - Include `development-services/.gitkeep`
+   - Preserve file permissions (especially for shell scripts)
 
 9. **`tmp/` directory:**
-   - Copy only the `.gitkeep` file
+   - `tmp/.gitkeep` → copy to `tmp/.gitkeep`
    - Do NOT create subdirectories (they will be created automatically by Docker volumes at runtime)
+
+### 🔍 File Copy Verification:
+
+After copying each file, verify:
+1. **File exists** in the new workspace at the correct path
+2. **File size matches** the source file exactly
+3. **File content is identical** - no modifications, no truncation
+4. **File name is exact** - same case, same extension
+5. **Directory structure preserved** - all subdirectories created
 
 ### ❌ Files NOT to Copy:
 
@@ -199,17 +255,24 @@ When an agent receives a scaffold prompt referencing this INSTRUCTIONS.md, it sh
 
 1. **Fetch and parse** this INSTRUCTIONS.md file from the provided URL
 2. **Validate** the current workspace is appropriate for scaffolding (empty or minimal)
-3. **Create the complete directory structure** as specified above
-4. **Copy all template files** from the source repository (https://github.com/andrelohmann/copilot-microservices-template), respecting the exceptions:
+3. **DO NOT CLONE** the template repository — fetch files individually via HTTP/HTTPS
+4. **Create the complete directory structure** as specified above
+5. **Copy all template files** from the source repository (https://github.com/andrelohmann/copilot-microservices-template) by fetching individual files, respecting the exceptions:
    - Copy contents of `templates/.github/` to `.github/` in new workspace
    - Copy contents of `templates/.vscode/` to `.vscode/` in new workspace
    - Do NOT copy the `templates/` folder itself
    - Copy everything else EXCEPT `README.md` (if exists), `INSTRUCTIONS.md`, `.git/`, `templates/` folder, and `tmp/` data
-5. **Preserve placeholders** — do not resolve variables like `${serviceName}`
-6. **Handle conflicts gracefully** — never overwrite `README.md` if it exists
-7. **Copy `.gitkeep` placeholder files** as found in the template (do NOT create `tmp/` subdirectories)
-8. **Understand the marker system** in docker-compose files for future service additions
-9. **Output a complete summary** of all created files and directories at the end
+6. **Preserve placeholders** — do not resolve variables like `${serviceName}`
+7. **Handle conflicts gracefully** — never overwrite `README.md` if it exists
+8. **Copy `.gitkeep` placeholder files** as found in the template (do NOT create `tmp/` subdirectories)
+9. **Understand the marker system** in docker-compose files for future service additions
+10. **Output a complete summary** of all created files and directories at the end
+
+### File Fetching Methods:
+Use one of these approaches to fetch files without cloning:
+- GitHub API: `https://api.github.com/repos/andrelohmann/copilot-microservices-template/contents/{path}`
+- Raw file URL: `https://raw.githubusercontent.com/andrelohmann/copilot-microservices-template/main/{path}`
+- Direct HTTP requests to fetch individual file contents
 
 ### Expected Result:
 After running the scaffold prompt, the new workspace should be a **near 100% copy** of the template repository, with all files, directory structure, configuration, and placeholders in place — ready for developers to start adding their own microservices.

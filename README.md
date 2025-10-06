@@ -239,10 +239,15 @@ Instead of directly cloning this repository, use it as an **external scaffold te
 Scaffold a new microservices workspace by fetching and following the instructions from:
 https://github.com/andrelohmann/codepilot-microservices-template/blob/main/INSTRUCTIONS.md
 
-Important instructions:
+CRITICAL instructions:
 - Fetch the INSTRUCTIONS.md file from the URL above
-- Follow all directives to create the complete directory structure and files
-- Copy all template files from the template repository (https://github.com/andrelohmann/copilot-microservices-template)
+- Follow ALL directives exactly as specified
+- Copy all template files EXACTLY AS-IS without any modifications
+- Do NOT edit, rename, or modify any file contents
+- Do NOT use git clone - fetch files individually via HTTP/HTTPS
+- Use raw GitHub URLs: https://raw.githubusercontent.com/andrelohmann/copilot-microservices-template/main/{filepath}
+- Copy file contents byte-for-byte without interpretation
+- Preserve exact filenames, directory structure, and file permissions
 - Do NOT overwrite README.md if it already exists
 - Do NOT copy INSTRUCTIONS.md itself to the new workspace
 - Create placeholders (.gitkeep) for service directories
