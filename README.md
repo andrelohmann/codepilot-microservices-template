@@ -230,7 +230,7 @@ Use the minimal scaffold procedure (clone → copy/merge → cleanup) defined in
 
 ### Quick Start (Agent Prompt)
 
-Paste this into Copilot Agent Chat (choose any capable model):
+Open a NEW Copilot Chat session (do not reuse an old conversation) and select the GPT-5 model explicitly (do not downgrade). Then paste:
 
 ```text
 Scaffold this workspace strictly using:
@@ -263,6 +263,19 @@ Suggested merge:
 
 Options: [A] accept merge [B] keep yours [C] use template [D] show diff
 ```
+
+### Avoiding Stale / Cached Instructions
+If the agent seems to use an older version of `INSTRUCTIONS.md`, do the following in order:
+1. Start a brand new chat (close the previous chat tab entirely).
+2. Reload Window (Command Palette: Developer: Reload Window).
+3. Remove all prior prompt text and re-paste only the minimal Quick Start block.
+4. As a last resort, fully clear VS Code workspace cache (this affects all workspaces):
+  ```bash
+  rm -rf ~/.config/Code/User/workspaceStorage/*
+  ```
+5. Re-open the folder and start a fresh GPT-5 chat.
+
+Do NOT rely on timestamp query parameters; they are unnecessary when the above steps are followed.
 
 ---
 
