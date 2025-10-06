@@ -226,113 +226,83 @@ The template provides a rich AI-assisted development experience:
 
 ## 🚀 Workspace Initialization
 
-Instead of directly cloning this repository, use it as an **external scaffold template**.  
+Instead of directly cloning this repository, use this **two-phase scaffold process**.
 
-### Step-by-Step:
+### Quick Start (Agent Prompt)
 
-1. **Create a new empty directory** for your project
-2. **Open it in VS Code**
-3. **Open the Agent Mode Chat** (Copilot) and **select the "Grok Code Fast 1" model**
-4. **Run the following prompt:**
+Use this minimal prompt in Copilot Agent Chat (select a capable model such as "GPT-5 mini" or similar):
 
 ```text
-Scaffold a new microservices workspace by fetching and following the instructions from:
+Scaffold this empty workspace using the instructions at:
 https://github.com/andrelohmann/codepilot-microservices-template/blob/main/INSTRUCTIONS.md
 
-CRITICAL instructions:
-- Fetch the INSTRUCTIONS.md file from the URL above
-- Follow ALL directives exactly as specified
-- Copy all template files EXACTLY AS-IS without any modifications
-- Do NOT edit, rename, or modify any file contents
-- Do NOT use git clone - fetch files individually via HTTP/HTTPS
-- Use raw GitHub URLs: https://raw.githubusercontent.com/andrelohmann/copilot-microservices-template/main/{filepath}
-- Copy file contents byte-for-byte without interpretation
-- Preserve exact filenames, directory structure, and file permissions
-- Do NOT overwrite README.md if it already exists
-- Do NOT copy INSTRUCTIONS.md itself to the new workspace
-- Create placeholders (.gitkeep) for service directories
-- Set up the docker-compose files with marker system for future service additions
-- Create config/.env.example but NOT config/.env
-- After completion, provide a comprehensive list of all created files and directories
-
-Execute this scaffold in a single operation without asking for confirmation unless there are conflicts.
+Follow ONLY what is written in that INSTRUCTIONS.md file.
+- Do not infer or improvise missing rules from this prompt.
+- Do not copy README.md or INSTRUCTIONS.md into this workspace.
+- Do not bring over git history (.git/).
+- Present merge suggestions for conflicting existing files instead of overwriting silently.
+Provide a final summary of actions.
 ```
 
-### What Happens Next:
+### What Happens:
 
-The agent will:
-✅ Create the complete directory structure  
-✅ Copy Copilot configurations from `templates/.github/` to `.github/` in your workspace  
-✅ Copy VS Code settings from `templates/.vscode/` to `.vscode/` in your workspace  
-✅ Copy all other configuration files (`config/`, `.devcontainer/`, etc.)  
-✅ Set up Docker Compose files with intelligent markers  
-✅ Copy development services (like Ollama/OpenAI API)  
-✅ Create placeholder directories for your services  
-✅ Preserve your existing README.md (if any)  
-✅ Provide a complete summary of created files  
+**PHASE 1 - Exact Clone:**
+✅ Perfect copy of all template files via git clone  
+✅ No LLM interpretation or file corruption  
+✅ Isolated in `.template-temp/` subdirectory  
 
-### Result:
+**PHASE 2 - Intelligent Migration:**
+✅ Copies files that should always be updated  
+✅ Moves `templates/.github/` and `templates/.vscode/` to root  
+✅ **Smart conflict detection** for existing files  
+✅ **Merge suggestions** for configuration files  
+✅ **Preserves your customizations** in existing files  
+✅ Skips unwanted files (README, INSTRUCTIONS, .git)  
 
-Your workspace will be a **near 100% copy** of this template, ready for you to start adding your own microservices following the Multi-Container pattern!
+**PHASE 3 - Clean Workspace:**
+✅ Removes temporary clone directory  
+✅ Creates proper placeholder structure  
+✅ Provides detailed migration report  
 
----
+### Conflict Resolution Example:
 
-## 📖 Next Steps
+If you already have a `.vscode/settings.json`, the agent will:
 
-After scaffolding your workspace:
+```
+📄 CONFLICT DETECTED: .vscode/settings.json
 
-1. **Configure environment variables:**
-   ```bash
-   cp config/.env.example config/.env
-   # Edit config/.env with your actual values
-   ```
+🔵 Your existing version:
+{
+  "editor.formatOnSave": true,
+  "myCustom.setting": "value"
+}
 
-2. **Start the development environment:**
-   ```bash
-   docker-compose -f docker-compose.yml -f docker-compose.development.yml up -d
-   ```
+🟢 Template version:
+{
+  "editor.formatOnSave": false,
+  "docker.composeCommand": "docker compose",
+  "copilot.enable": true
+}
 
-3. **Open in VS Code Dev Container:**
-   - Use the Command Palette (`Ctrl+Shift+P` / `Cmd+Shift+P`)
-   - Select "Dev Containers: Open Workspace in Container"
+💡 Suggested merge:
+{
+  "editor.formatOnSave": true,           ← Preserved from your version
+  "myCustom.setting": "value",           ← Preserved from your version
+  "docker.composeCommand": "docker compose",  ← Added from template
+  "copilot.enable": true                 ← Added from template
+}
 
-4. **Add your first service:**
-   - Use Copilot to generate service structure
-   - Services are automatically added between the markers in docker-compose files
-
----
-
-## 📚 Documentation
-
-### Template Documentation
-- **INSTRUCTIONS.md** – Complete scaffolding instructions for agents (not copied to new workspaces)
-- **templates/.github/copilot-instructions.md** – Copilot behavior and workspace conventions (copied to `.github/` in new workspace)
-- **templates/.github/instructions/** – Additional instruction files like compose-guardrails (copied to `.github/instructions/`)
-- **templates/.github/prompts/** – Reusable prompt templates for common tasks (copied to `.github/prompts/`)
-- **templates/.github/chatmodes/** – Custom chat modes for specific development workflows (copied to `.github/chatmodes/`)
-- **templates/.vscode/** – VS Code extensions and settings (copied to `.vscode/` in new workspace)
-
-### VS Code Documentation
-- **[Connect to Multiple Containers](https://code.visualstudio.com/remote/advancedcontainers/connect-multiple-containers)** – Learn how VS Code manages multiple dev containers
-- **[Custom Instructions for Copilot](https://code.visualstudio.com/docs/copilot/customization/custom-instructions)** – Configure workspace-specific Copilot behavior
-- **[Prompt Files](https://code.visualstudio.com/docs/copilot/customization/prompt-files)** – Create and use reusable prompt templates
-- **[Custom Chat Modes](https://code.visualstudio.com/docs/copilot/customization/custom-chat-modes)** – Build specialized chat modes for your workflow
-
----
-
-## 🤝 Contributing
-
-This is a template repository. To contribute:
-
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Test the scaffolding process in a new empty directory
-5. Submit a pull request
+Accept this merge? (yes/no/edit)
+```
 
 ---
 
 ## 📜 License
 
-[MIT License](./LICENSE)
+This project is licensed under the MIT License. See the `LICENSE` file in the repository root.
+
+When scaffolding a new workspace:
+- Do NOT overwrite an existing `LICENSE` unless explicitly instructed.
+- If no license exists, copy the template `LICENSE` verbatim.
+
 
