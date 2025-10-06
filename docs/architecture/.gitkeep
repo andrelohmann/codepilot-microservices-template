@@ -1,0 +1,6 @@
+# This directory contains architecture documentation
+
+All system-wide architecture documentation goes here, including:
+- overview.md — Complete system architecture with ASCII art diagrams
+- data-flow.md — Request/response flows through services
+- network-topology.md — Docker network configuration and port mappings

@@ -1,0 +1,8 @@
+# This directory contains service-specific documentation
+
+One documentation file per service type:
+- api-service.md — FastAPI service architecture
+- frontend-service.md — React frontend architecture
+- worker-service.md — Background worker architecture
+
+Each must include ASCII art diagrams showing internal architecture, dependencies, and flows.

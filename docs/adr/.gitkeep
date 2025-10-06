@@ -1,0 +1,8 @@
+# This directory contains Architecture Decision Records (ADRs)
+
+Each ADR documents a significant architectural decision with:
+- Context diagram (problem space)
+- Decision diagram (chosen solution)
+- Consequences diagram (impact)
+
+Format: NNNN-decision-title.md (e.g., 0001-use-fastapi-for-backend.md)

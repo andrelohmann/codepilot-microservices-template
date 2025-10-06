@@ -1,0 +1,8 @@
+# This directory contains onboarding documentation
+
+Getting started guides for new developers:
+- workspace-setup.md — Initial setup flow
+- adding-a-service.md — How to add new services
+- development-workflow.md — Daily development cycle
+
+Each must include ASCII art workflow diagrams.

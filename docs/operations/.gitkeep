@@ -1,0 +1,9 @@
+# This directory contains operational procedures
+
+Documentation for:
+- deployment.md — Deployment pipelines and procedures
+- monitoring.md — Monitoring stack and alerting
+- backup-restore.md — Backup and disaster recovery
+- troubleshooting.md — Common issues and solutions
+
+All docs must include ASCII art flowcharts and decision trees.
