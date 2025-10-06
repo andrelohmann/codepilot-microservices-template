@@ -45,6 +45,10 @@ The newly scaffolded workspace should include the following structure:
 ├── development-services/
 │   └── .gitkeep        ← Placeholder (dev-only services like Ollama, mocks)
 │
+├── templates/          ← Template files (not copied to new workspace)
+│   ├── .github/        ← Copy contents to root .github/ in new workspace
+│   └── .vscode/        ← Copy contents to root .vscode/ in new workspace
+│
 └── tmp/                ← Runtime data directory (gitignored, created at runtime)
     └── .gitkeep
 ```
@@ -103,13 +107,15 @@ The agent should copy **ALL** files from the template repository to the new work
 2. **`.devcontainer/` directory:**
    - All files including `.gitkeep`
 
-3. **`.github/` directory:**
+3. **`.github/` directory** (source: `templates/.github/`):
+   - Copy from `templates/.github/` to `.github/` in the new workspace
    - `copilot-instructions.md`
    - `instructions/` (all files)
    - `prompts/` (all *.prompt.md files)
    - `chatmodes/` (all *.chatmode.md files)
 
-4. **`.vscode/` directory:**
+4. **`.vscode/` directory** (source: `templates/.vscode/`):
+   - Copy from `templates/.vscode/` to `.vscode/` in the new workspace
    - `extensions.json`
    - `settings.json`
 
@@ -136,6 +142,7 @@ The agent should copy **ALL** files from the template repository to the new work
 2. **`INSTRUCTIONS.md`** — Never copy this file to the target workspace
 3. **`.git/` directory** — Never copy version control data
 4. **`tmp/` subdirectories** — Only copy `tmp/.gitkeep`, NOT any subdirectories like `.redis/`, `.ollama/` (created at runtime by Docker)
+5. **`templates/` folder itself** — Do NOT copy the templates folder; instead, copy its contents (`.github/`, `.vscode/`) to the root of the new workspace
 
 ---
 
@@ -168,8 +175,8 @@ Follow this order for optimal scaffolding:
    - `.gitignore`, `LICENSE`, `docker-compose.yml`, `docker-compose.development.yml`
 
 3. **Copy configuration directories:**
-   - `.github/` (all subdirectories and files)
-   - `.vscode/` (all files)
+   - Copy `templates/.github/` to `.github/` in new workspace (all subdirectories and files)
+   - Copy `templates/.vscode/` to `.vscode/` in new workspace (all files)
    - `config/.env.example`
 
 4. **Create placeholder directories:**
@@ -194,7 +201,10 @@ When an agent receives a scaffold prompt referencing this INSTRUCTIONS.md, it sh
 2. **Validate** the current workspace is appropriate for scaffolding (empty or minimal)
 3. **Create the complete directory structure** as specified above
 4. **Copy all template files** from the source repository (https://github.com/andrelohmann/copilot-microservices-template), respecting the exceptions:
-   - Copy everything EXCEPT `README.md` (if exists), `INSTRUCTIONS.md`, `.git/`, and `tmp/` data
+   - Copy contents of `templates/.github/` to `.github/` in new workspace
+   - Copy contents of `templates/.vscode/` to `.vscode/` in new workspace
+   - Do NOT copy the `templates/` folder itself
+   - Copy everything else EXCEPT `README.md` (if exists), `INSTRUCTIONS.md`, `.git/`, `templates/` folder, and `tmp/` data
 5. **Preserve placeholders** — do not resolve variables like `${serviceName}`
 6. **Handle conflicts gracefully** — never overwrite `README.md` if it exists
 7. **Copy `.gitkeep` placeholder files** as found in the template (do NOT create `tmp/` subdirectories)

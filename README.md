@@ -13,21 +13,36 @@ This template leverages VS Code's powerful features for multi-container developm
 
 ## 📂 Directory Structure
 
+### Template Repository Structure
+
 - `.devcontainer/` – VS Code Dev Container configuration  
-- `.github/` – GitHub-specific files (separate from Copilot files)
-  - `copilot-instructions.md` – Main Copilot instructions
-  - `chatmodes/` – Custom chat modes
-  - `instructions/` – Additional instruction files
-  - `prompts/` – Reusable prompt templates
-- `.vscode/` – VS Code workspace settings (including MCP configuration)  
+- `templates/` – Template files that will be copied to new workspaces
+  - `.github/` – GitHub-specific files (Copilot instructions, prompts, chatmodes)
+    - `copilot-instructions.md` – Main Copilot instructions
+    - `chatmodes/` – Custom chat modes
+    - `instructions/` – Additional instruction files (e.g., compose-guardrails)
+    - `prompts/` – Reusable prompt templates
+  - `.vscode/` – VS Code workspace settings (extensions, settings)
 - `config/` – Centralized configuration files  
   - `.env.example` – Environment variable template
-- `services/` – Your own microservices (APIs, Frontends, Workers, etc.)  
-- `backing-services/` – External dependencies like databases, caches, message queues  
+- `services/` – Placeholder for your microservices (APIs, Frontends, Workers, etc.)  
+- `backing-services/` – Placeholder for external dependencies (databases, caches, message queues)  
 - `development-services/` – Development and testing utilities (e.g., mock services, Ollama, MCP)  
 - `tmp/` – Runtime data directory (gitignored, for Redis data, Ollama models, etc.)
 - `docker-compose.yml` – Base multi-container architecture setup  
 - `docker-compose.development.yml` – Development environment overlay  
+
+### Scaffolded Workspace Structure
+
+After scaffolding, your new workspace will have:
+
+- `.devcontainer/` – Copied from template
+- `.github/` – Copied from `templates/.github/` to root level
+  - `copilot-instructions.md`
+  - `chatmodes/`, `instructions/`, `prompts/`
+- `.vscode/` – Copied from `templates/.vscode/` to root level
+- `config/`, `services/`, `backing-services/`, `development-services/`, `tmp/` – Same as template
+- `docker-compose.yml`, `docker-compose.development.yml` – Copied from template  
 
 ---
 
@@ -242,7 +257,9 @@ Execute this scaffold in a single operation without asking for confirmation unle
 
 The agent will:
 ✅ Create the complete directory structure  
-✅ Copy all configuration files (`.github/`, `.vscode/`, `config/`, etc.)  
+✅ Copy Copilot configurations from `templates/.github/` to `.github/` in your workspace  
+✅ Copy VS Code settings from `templates/.vscode/` to `.vscode/` in your workspace  
+✅ Copy all other configuration files (`config/`, `.devcontainer/`, etc.)  
 ✅ Set up Docker Compose files with intelligent markers  
 ✅ Copy development services (like Ollama/OpenAI API)  
 ✅ Create placeholder directories for your services  
@@ -284,9 +301,11 @@ After scaffolding your workspace:
 
 ### Template Documentation
 - **INSTRUCTIONS.md** – Complete scaffolding instructions for agents (not copied to new workspaces)
-- **.github/copilot-instructions.md** – Copilot behavior and workspace conventions
-- **.github/prompts/** – Reusable prompt templates for common tasks
-- **.github/chatmodes/** – Custom chat modes for specific development workflows
+- **templates/.github/copilot-instructions.md** – Copilot behavior and workspace conventions (copied to `.github/` in new workspace)
+- **templates/.github/instructions/** – Additional instruction files like compose-guardrails (copied to `.github/instructions/`)
+- **templates/.github/prompts/** – Reusable prompt templates for common tasks (copied to `.github/prompts/`)
+- **templates/.github/chatmodes/** – Custom chat modes for specific development workflows (copied to `.github/chatmodes/`)
+- **templates/.vscode/** – VS Code extensions and settings (copied to `.vscode/` in new workspace)
 
 ### VS Code Documentation
 - **[Connect to Multiple Containers](https://code.visualstudio.com/remote/advancedcontainers/connect-multiple-containers)** – Learn how VS Code manages multiple dev containers
