@@ -226,73 +226,42 @@ The template provides a rich AI-assisted development experience:
 
 ## 🚀 Workspace Initialization
 
-Instead of directly cloning this repository, use this **two-phase scaffold process**.
+Use the minimal scaffold procedure (clone → copy/merge → cleanup) defined in `INSTRUCTIONS.md`.
 
 ### Quick Start (Agent Prompt)
 
-Use this minimal prompt in Copilot Agent Chat (select a capable model such as "GPT-5 mini" or similar):
+Paste this into Copilot Agent Chat (choose any capable model):
 
 ```text
-Scaffold this empty workspace using the instructions at:
+Scaffold this workspace strictly using:
 https://github.com/andrelohmann/codepilot-microservices-template/blob/main/INSTRUCTIONS.md
 
-Follow ONLY what is written in that INSTRUCTIONS.md file.
-- Do not infer or improvise missing rules from this prompt.
-- Do not copy README.md or INSTRUCTIONS.md into this workspace.
-- Do not bring over git history (.git/).
-- Present merge suggestions for conflicting existing files instead of overwriting silently.
-Provide a final summary of actions.
+Follow ONLY that file. Do nothing extra.
 ```
 
-### What Happens:
+### What Happens (Summary)
+- Temporary clone created at `tmp-clone/`
+- Required template files copied byte-for-byte
+- `.github/` and `.vscode/` populated from template subfolders
+- Existing config files produce merge suggestions instead of silent overwrite
+- Code files never overwritten automatically
+- `.gitignore` merged (unique patterns preserved)
+- Placeholders ensured: `services/`, `backing-services/`, `tmp/`
+- Temporary clone removed
+- Final summary reported
 
-**PHASE 1 - Exact Clone:**
-✅ Perfect copy of all template files via git clone  
-✅ No LLM interpretation or file corruption  
-✅ Isolated in `.template-temp/` subdirectory  
-
-**PHASE 2 - Intelligent Migration:**
-✅ Copies files that should always be updated  
-✅ Moves `templates/.github/` and `templates/.vscode/` to root  
-✅ **Smart conflict detection** for existing files  
-✅ **Merge suggestions** for configuration files  
-✅ **Preserves your customizations** in existing files  
-✅ Skips unwanted files (README, INSTRUCTIONS, .git)  
-
-**PHASE 3 - Clean Workspace:**
-✅ Removes temporary clone directory  
-✅ Creates proper placeholder structure  
-✅ Provides detailed migration report  
-
-### Conflict Resolution Example:
-
-If you already have a `.vscode/settings.json`, the agent will:
-
+### Sample Conflict Merge (.vscode/settings.json)
 ```
-📄 CONFLICT DETECTED: .vscode/settings.json
+Your version:
+{ "editor.formatOnSave": true, "myCustom.setting": "value" }
 
-🔵 Your existing version:
-{
-  "editor.formatOnSave": true,
-  "myCustom.setting": "value"
-}
+Template version:
+{ "editor.formatOnSave": false, "docker.composeCommand": "docker compose", "copilot.enable": true }
 
-🟢 Template version:
-{
-  "editor.formatOnSave": false,
-  "docker.composeCommand": "docker compose",
-  "copilot.enable": true
-}
+Suggested merge:
+{ "editor.formatOnSave": true, "myCustom.setting": "value", "docker.composeCommand": "docker compose", "copilot.enable": true }
 
-💡 Suggested merge:
-{
-  "editor.formatOnSave": true,           ← Preserved from your version
-  "myCustom.setting": "value",           ← Preserved from your version
-  "docker.composeCommand": "docker compose",  ← Added from template
-  "copilot.enable": true                 ← Added from template
-}
-
-Accept this merge? (yes/no/edit)
+Options: [A] accept merge [B] keep yours [C] use template [D] show diff
 ```
 
 ---
