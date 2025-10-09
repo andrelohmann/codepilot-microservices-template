@@ -1,135 +1,132 @@
 ---
-applyTo:
-  - "services/api-fiber-*/**"
+applyTo: "**/api-fiber-*/**"
+description: Fiber API service with Go, high performance, and Express-like routing
 ---
 
-# Fiber API Service Instructions
+# Fiber API Service - Copilot Guidance
 
-Apply to Go-based REST APIs using the Fiber framework.
+Quick reference for GitHub Copilot when working with Fiber API services.
 
-## Technology Stack
+## Reference Documentation
 
-- **Framework:** Fiber v2 (Express-inspired)
-- **Language:** Go 1.21+
-- **Validation:** go-playground/validator
-- **Database:** PostgreSQL via pgx/sqlx or GORM
-- **Logging:** zerolog
-- **Configuration:** viper or godotenv
+- **[Complete Fiber Tech-Stack Guide](../../../docs/tech-stacks/apis/fiber.md)** - Full implementation details, examples, and best practices
+- **[Scaffold Prompt](../prompts/scaffold-api-fiber-service.prompt.md)** - Generate new Fiber services
+
+## Naming Convention
+
+`api-fiber-{purpose}` (e.g., `api-fiber-auth`, `api-fiber-analytics`)
 
 ## Project Structure
 
 ```
 services/api-fiber-{purpose}/
-├── cmd/server/main.go
+├── cmd/server/
+│   └── main.go                # Application entry point
 ├── internal/
-│   ├── config/
-│   ├── handlers/
-│   ├── middleware/
-│   ├── models/
-│   ├── repository/
-│   └── services/
-├── pkg/
+│   ├── config/                # Configuration
+│   ├── handlers/              # HTTP handlers (controllers)
+│   ├── middleware/            # Custom middleware
+│   ├── models/                # Data models/structs
+│   ├── repository/            # Database access layer
+│   └── services/              # Business logic
+├── pkg/                       # Shared/exported packages
 ├── go.mod
 ├── Dockerfile
 └── README.md
 ```
 
-## Core Patterns
+## Copilot Coding Guidance
 
-**Route Definition:**
-- Group routes by feature domain
-- Use `app.Group()` for versioning (`/api/v1`)
-- Separate handler registration from business logic
-- Example: `v1.Get("/users", handlers.ListUsers)`
+### Use These Patterns
 
-**Middleware Stack:**
-- Logger middleware for request/response logging
-- Recover middleware for panic recovery
-- CORS middleware with explicit origins
-- Auth middleware using JWT validation
-- Rate limiting per route or globally
+1. **Clean Architecture** - Handler → Service → Repository
+2. **Context Passing** - Use `context.Context` for cancellation
+3. **Error Handling** - Always check errors, use fiber.Error
+4. **Validation** - Use validator tags on structs
+5. **Dependency Injection** - Pass dependencies via structs
+6. **Interface Design** - Define interfaces for repositories
 
-**Error Handling:**
-- Return `fiber.Error` with appropriate status codes
-- Use custom error types for domain errors
-- Format: `{"error": "message", "code": "ERROR_CODE"}`
-- Log errors with context using zerolog
+### Quick Patterns Reference
 
-**Request Validation:**
-- Define structs with validation tags
-- Use `c.BodyParser()` + `validator.Validate()`
-- Return 400 Bad Request with field-specific errors
-- Validate path/query params explicitly
+**Route Handler**:
+```go
+func (h *UserHandler) CreateUser(c *fiber.Ctx) error {
+    var req CreateUserRequest
+    if err := c.BodyParser(&req); err != nil {
+        return fiber.NewError(fiber.StatusBadRequest, "Invalid request body")
+    }
+    
+    if err := h.validator.Struct(req); err != nil {
+        return fiber.NewError(fiber.StatusBadRequest, err.Error())
+    }
+    
+    user, err := h.service.CreateUser(c.Context(), req)
+    if err != nil {
+        return err
+    }
+    
+    return c.Status(fiber.StatusCreated).JSON(fiber.Map{
+        "data": user,
+    })
+}
+```
 
-**Database Access:**
-- Repository pattern with interfaces
-- Use contexts for cancellation (`context.Context`)
-- Prepare statements for repeated queries
-- Handle `sql.ErrNoRows` explicitly
-- Connection pooling configured in `database.Config`
+**Validated Request Struct**:
+```go
+type CreateUserRequest struct {
+    Email    string `json:"email" validate:"required,email"`
+    Password string `json:"password" validate:"required,min=8"`
+    Name     string `json:"name" validate:"required"`
+}
+```
 
-**Configuration:**
-- Environment variables with `.env` file
-- Struct-based config loaded at startup
-- Required: `PORT`, `DATABASE_URL`, `JWT_SECRET`
-- Optional: `LOG_LEVEL`, `CORS_ORIGINS`, `RATE_LIMIT`
+**Repository Interface**:
+```go
+type UserRepository interface {
+    Create(ctx context.Context, user *models.User) error
+    FindByID(ctx context.Context, id string) (*models.User, error)
+    FindByEmail(ctx context.Context, email string) (*models.User, error)
+}
+```
 
-**Response Formats:**
-- Success: `{"data": {...}, "meta": {...}}`
-- Error: `{"error": "message", "details": [...]}`
-- Pagination: `{"data": [...], "meta": {"page": 1, "total": 100}}`
-- Empty lists return `[]` not null
+**Middleware Example**:
+```go
+func AuthMiddleware(secret string) fiber.Handler {
+    return func(c *fiber.Ctx) error {
+        token := c.Get("Authorization")
+        if token == "" {
+            return fiber.NewError(fiber.StatusUnauthorized, "Missing token")
+        }
+        
+        // Validate JWT token
+        claims, err := validateJWT(token, secret)
+        if err != nil {
+            return fiber.NewError(fiber.StatusUnauthorized, "Invalid token")
+        }
+        
+        c.Locals("userID", claims.UserID)
+        return c.Next()
+    }
+}
+```
 
-## Testing Standards
+### Code Style
 
-- Unit tests in `_test.go` files alongside implementation
-- Integration tests in `tests/` directory
-- Use `httptest` for handler testing
-- Mock interfaces for repository tests
-- Table-driven tests for multiple scenarios
+- **Naming**: PascalCase for exported, camelCase for unexported
+- **Error Handling**: Check all errors, use `fiber.NewError` with status
+- **Package Organization**: `internal/` for private, `pkg/` for shared
+- **Imports**: Group stdlib, external, local with blank lines
+- **Contexts**: Pass `context.Context` as first parameter
 
-## Performance Optimizations
+### Anti-Patterns to Avoid
 
-- Enable Fiber's prefork mode in production
-- Use connection pooling (min 5, max 25 connections)
-- Implement response compression
-- Cache frequently accessed data in memory
-- Use zero-allocation routing where possible
-
-## Security Requirements
-
-- Helmet-style security headers via middleware
-- JWT tokens with expiration and refresh
-- SQL injection prevention via parameterized queries
-- Input sanitization for all user inputs
-- HTTPS only in production (enforce via middleware)
-
-## Health Checks
-
-- `/health` endpoint returning `{"status": "ok"}` (200)
-- `/ready` endpoint checking database connectivity
-- Include version and uptime in health response
-- Docker HEALTHCHECK using `/health`
-
-## Anti-Patterns
-
-❌ Using `interface{}` without type assertions  
 ❌ Ignoring error returns (`_, _ = ...`)  
-❌ Global state beyond config and logger  
-❌ Direct database access from handlers  
-❌ Forgetting to close resources (defer `Close()`)  
-❌ Returning HTML instead of JSON for APIs  
+❌ Using `interface{}` without type assertions  
+❌ Global state beyond config/logger  
+❌ Direct DB access from handlers  
+❌ Forgetting `defer` for resource cleanup  
 ❌ Not using contexts for cancellation  
+❌ Returning HTML in JSON API  
 
-## Dependencies
+For detailed examples, deployment guides, testing strategies, and advanced patterns, refer to the [Fiber Tech-Stack Documentation](../../../docs/tech-stacks/apis/fiber.md).
 
-Required:
-- `github.com/gofiber/fiber/v2`
-- `github.com/go-playground/validator/v10`
-- `github.com/rs/zerolog`
-- `github.com/jackc/pgx/v5` or `gorm.io/gorm`
-
-Optional:
-- `github.com/golang-jwt/jwt/v5` (auth)
-- `github.com/gofiber/helmet/v2` (security)
-- `github.com/gofiber/limiter/v2` (rate limiting)

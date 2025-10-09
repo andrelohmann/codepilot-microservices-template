@@ -3,43 +3,36 @@ applyTo: "**/api-nestjs-*/**"
 description: NestJS API service with TypeScript, TypeORM, and dependency injection
 ---
 
-# API NestJS - Enterprise Node.js API
+# NestJS API Service - Copilot Guidance
 
-Build RESTful APIs with NestJS framework using TypeScript and modular architecture.
+Quick reference for GitHub Copilot when working with NestJS API services.
+
+## Reference Documentation
+
+- **[Complete NestJS Tech-Stack Guide](../../../docs/tech-stacks/apis/nestjs.md)** - Full implementation details, examples, and best practices
+- **[Scaffold Prompt](../prompts/scaffold-api-nestjs-service.prompt.md)** - Generate new NestJS services
 
 ## Naming Convention
 
 `api-nestjs-{purpose}` (e.g., `api-nestjs-billing`, `api-nestjs-payments`)
 
-## Technology Stack
-
-- NestJS 10+ (framework)
-- TypeScript 5+ (language)
-- TypeORM (database ORM)
-- class-validator (validation)
-- class-transformer (serialization)
-- Passport.js (authentication)
-- Swagger/OpenAPI (documentation)
-- Jest (testing)
-
-## Directory Structure
+## Project Structure
 
 ```
 services/api-nestjs-{purpose}/
 ├── src/
-│   ├── main.ts
-│   ├── app.module.ts
-│   ├── config/
-│   │   └── configuration.ts
-│   ├── modules/
-│   │   ├── users/
+│   ├── main.ts                    # Application bootstrap
+│   ├── app.module.ts              # Root module
+│   ├── config/                    # Configuration files
+│   ├── modules/                   # Feature modules
+│   │   ├── users/                 # Example: Users module
 │   │   │   ├── users.module.ts
 │   │   │   ├── users.controller.ts
 │   │   │   ├── users.service.ts
-│   │   │   ├── entities/user.entity.ts
-│   │   │   └── dto/create-user.dto.ts
-│   │   └── auth/
-│   ├── common/
+│   │   │   ├── entities/
+│   │   │   └── dto/
+│   │   └── auth/                  # Example: Auth module
+│   ├── common/                    # Shared code
 │   │   ├── filters/
 │   │   ├── guards/
 │   │   ├── interceptors/
@@ -47,17 +40,25 @@ services/api-nestjs-{purpose}/
 │   └── database/
 │       └── migrations/
 ├── test/
-│   ├── unit/
-│   └── e2e/
 ├── Dockerfile
 ├── package.json
-├── tsconfig.json
-└── nest-cli.json
+└── tsconfig.json
 ```
 
-## Module Pattern
+## Copilot Coding Guidance
 
-Each feature = one module:
+### Use These Patterns
+
+1. **Module-Driven Architecture** - One module per feature/domain
+2. **Dependency Injection** - Always use constructor injection
+3. **DTOs with Validation** - Use class-validator decorators
+4. **TypeORM Entities** - Decorate with TypeORM decorators
+5. **Swagger Documentation** - Add @Api decorators to controllers
+6. **Layered Structure** - Controller → Service → Repository
+
+### Quick Patterns Reference
+
+**Module Structure**:
 ```typescript
 @Module({
   imports: [TypeOrmModule.forFeature([User])],
@@ -68,54 +69,36 @@ Each feature = one module:
 export class UsersModule {}
 ```
 
-## Dependency Injection
-
-Use constructor injection:
+**Controller with Validation**:
 ```typescript
-@Injectable()
-export class UsersService {
-  constructor(
-    @InjectRepository(User)
-    private usersRepository: Repository<User>,
-    private configService: ConfigService,
-  ) {}
+@Controller('users')
+@ApiTags('users')
+export class UsersController {
+  constructor(private usersService: UsersService) {}
+
+  @Post()
+  @ApiOperation({ summary: 'Create user' })
+  create(@Body() dto: CreateUserDto) {
+    return this.usersService.create(dto);
+  }
 }
 ```
 
-## Validation
-
-Use class-validator DTOs:
+**DTO with Validation**:
 ```typescript
 export class CreateUserDto {
   @IsEmail()
+  @ApiProperty()
   email: string;
 
   @IsString()
   @MinLength(8)
+  @ApiProperty()
   password: string;
 }
 ```
 
-## Configuration
-
-Use @nestjs/config:
-```typescript
-@Module({
-  imports: [
-    ConfigModule.forRoot({
-      isGlobal: true,
-      validationSchema: Joi.object({
-        DATABASE_URL: Joi.string().required(),
-        JWT_SECRET: Joi.string().min(32).required(),
-      }),
-    }),
-  ],
-})
-```
-
-## Database
-
-TypeORM with migrations:
+**TypeORM Entity**:
 ```typescript
 @Entity()
 export class User {
@@ -130,63 +113,37 @@ export class User {
 }
 ```
 
-## Testing
-
-- Jest for unit tests
-- Supertest for E2E tests
-- Test coverage >80%
-
+**Injectable Service**:
 ```typescript
-describe('UsersService', () => {
-  let service: UsersService;
-
-  beforeEach(async () => {
-    const module = await Test.createTestingModule({
-      providers: [UsersService, mockRepository],
-    }).compile();
-
-    service = module.get<UsersService>(UsersService);
-  });
-});
-```
-
-## API Documentation
-
-Swagger auto-generated:
-```typescript
-@ApiTags('users')
-@Controller('users')
-export class UsersController {
-  @ApiOperation({ summary: 'Create user' })
-  @ApiResponse({ status: 201, type: User })
-  @Post()
-  create(@Body() dto: CreateUserDto) {}
-}
-```
-
-## Health Checks
-
-```typescript
-@Controller('health')
-export class HealthController {
+@Injectable()
+export class UsersService {
   constructor(
-    private health: HealthCheckService,
-    private db: TypeOrmHealthIndicator,
+    @InjectRepository(User)
+    private usersRepository: Repository<User>,
   ) {}
 
-  @Get()
-  check() {
-    return this.health.check([
-      () => this.db.pingCheck('database'),
-    ]);
+  async findOne(id: string): Promise<User> {
+    return this.usersRepository.findOneBy({ id });
   }
 }
 ```
 
-## Anti-Patterns
+### Code Style
 
-- ❌ Business logic in controllers
-- ❌ Direct repository access in controllers
-- ❌ No validation on DTOs
-- ❌ Circular dependencies between modules
-- ❌ Not using dependency injection
+- **Naming**: PascalCase for classes, camelCase for methods/properties
+- **Decorators**: Use NestJS decorators (@Injectable, @Controller, etc.)
+- **Imports**: Group by external, @nestjs, local
+- **Dependency Injection**: Constructor injection only
+- **Testing**: One describe block per class, nest contexts
+
+### Anti-Patterns to Avoid
+
+❌ Business logic in controllers  
+❌ Direct repository access in controllers  
+❌ Missing validation on DTOs  
+❌ Circular module dependencies  
+❌ Not using dependency injection  
+❌ Synchronous operations in async context  
+
+For detailed examples, deployment guides, testing strategies, and advanced patterns, refer to the [NestJS Tech-Stack Documentation](../../../docs/tech-stacks/apis/nestjs.md).
+

@@ -1,20 +1,14 @@
 ---
-applyTo:
-  - "services/stream-golang-*/**"
+applyTo: "**/stream-golang-*/**"
+description: Golang real-time stream processing with Kafka, NATS, or RabbitMQ integration
 ---
 
 # Golang Stream Processing Service Instructions
 
 Apply to real-time data stream processing services using Go.
 
-## Technology Stack
-
-- **Language:** Go 1.21+
-- **Streaming:** Kafka, NATS, or Redis Streams
-- **Processing:** Goroutines with channels
-- **State:** In-memory or Redis
-- **Metrics:** Prometheus
-- **Logging:** zerolog
+**Reference**: [Complete Golang Stream Tech Stack Documentation](../../../docs/tech-stacks/streams/golang.md)  
+**Scaffold**: Use the `scaffold-stream-golang-service.prompt.md` for new services
 
 ## Project Structure
 
@@ -26,110 +20,119 @@ services/stream-golang-{purpose}/
 │   ├── consumers/
 │   ├── processors/
 │   ├── producers/
-│   ├── state/
-│   └── metrics/
-├── pkg/
-├── go.mod
-├── Dockerfile
-└── README.md
+│   └── state/
+└── go.mod
 ```
 
-## Core Patterns
+## Quick Reference Patterns
 
-**Consumer Setup:**
-- Kafka consumer group with automatic offset management
-- NATS JetStream durable consumers
-- Redis Streams with consumer groups
-- Batch consumption for throughput
-- Graceful shutdown with offset commit
+### 1. Kafka Consumer
 
-**Message Processing:**
-- Single message: `func ProcessMessage(ctx context.Context, msg Message) error`
-- Batch processing: `func ProcessBatch(ctx context.Context, msgs []Message) error`
-- Idempotent processing (deduplicate by message ID)
-- Error handling with retry logic
-- Dead letter queue for failed messages
-
-**Stream Patterns:**
-- **Fan-out:** Single input, multiple processors
-- **Fan-in:** Multiple inputs, single processor
-- **Pipeline:** Chained processing stages
-- **Windowing:** Time or count-based windows
-- **Aggregation:** Group and reduce operations
-
-**Concurrency Model:**
-- Consumer goroutine per partition
-- Processor pool for message handling
-- Buffered channels between stages
-- Backpressure handling
-- Context-based cancellation
-
-**State Management:**
-- In-memory state with sync.Map or regular map + mutex
-- Redis for distributed state
-- Periodic state snapshots
-- State TTL for cleanup
-- Consistent hashing for partitioning
-
-**Exactly-Once Semantics:**
-- Transactional producers (Kafka)
-- Idempotency keys for deduplication
-- State + offset atomic commits
-- Retry with same message ID
-
-**Error Handling:**
-- Transient errors: retry with exponential backoff
-- Permanent errors: send to DLQ
-- Log with context (topic, partition, offset, message ID)
-- Circuit breaker for downstream failures
-
-**Throughput Optimization:**
-- Batch message consumption
-- Parallel processing with worker pools
-- Async producers with callbacks
-- Compression for large messages
-- Tune buffer sizes and batch sizes
-
-## Kafka Integration
-
-**Consumer Configuration:**
-- Group ID for coordination
-- Auto offset reset: earliest/latest
-- Enable auto commit or manual commit
-- Max poll records: 500-1000
-- Session timeout: 30s
-
-**Producer Configuration:**
-- Acks: all (strongest guarantee)
-- Retries: 3-5
-- Idempotence: enabled
-- Compression: snappy/lz4
-- Batch size: 16KB-1MB
-
-**Example Consumer:**
 ```go
 config := kafka.ReaderConfig{
     Brokers:        []string{"kafka:9092"},
     Topic:          "events",
     GroupID:        "processor-group",
-    MinBytes:       10e3,  // 10KB
-    MaxBytes:       10e6,  // 10MB
+    MinBytes:       10e3,
+    MaxBytes:       10e6,
     CommitInterval: time.Second,
 }
 reader := kafka.NewReader(config)
 defer reader.Close()
+
+for {
+    msg, err := reader.ReadMessage(ctx)
+    if err != nil {
+        break
+    }
+    if err := ProcessMessage(ctx, msg); err != nil {
+        // Send to DLQ
+    }
+    // Auto-commit
+}
 ```
 
-## NATS Integration
+### 2. Message Processor with Worker Pool
 
-**JetStream Setup:**
-- Stream with retention policy
-- Durable consumer with ack policy
-- Max deliver attempts
-- Ack wait timeout
-- Flow control enabled
+```go
+func ProcessStream(ctx context.Context, reader *kafka.Reader) {
+    messages := make(chan kafka.Message, 100)
+    var wg sync.WaitGroup
+    
+    // Worker pool
+    for i := 0; i < runtime.NumCPU(); i++ {
+        wg.Add(1)
+        go func() {
+            defer wg.Done()
+            for msg := range messages {
+                if err := ProcessMessage(ctx, msg); err != nil {
+                    log.Error().Err(err).Msg("processing failed")
+                }
+            }
+        }()
+    }
+    
+    // Consumer
+    for {
+        msg, err := reader.FetchMessage(ctx)
+        if err != nil {
+            break
+        }
+        select {
+        case messages <- msg:
+            reader.CommitMessages(ctx, msg)
+        case <-ctx.Done():
+            close(messages)
+            wg.Wait()
+            return
+        }
+    }
+}
+```
 
-**Example Consumer:**
+### 3. Windowed Aggregation
+
+```go
+type Window struct {
+    Start    time.Time
+    End      time.Time
+    Messages []Message
+    Count    int
+}
+
+// 1-minute tumbling windows
+windowDuration := time.Minute
+
+func ProcessWindowed(ctx context.Context) {
+    windows := make(map[time.Time]*Window)
+    ticker := time.NewTicker(windowDuration)
+    
+    for {
+        select {
+        case msg := <-messages:
+            windowStart := msg.Timestamp.Truncate(windowDuration)
+            if _, exists := windows[windowStart]; !exists {
+                windows[windowStart] = &Window{Start: windowStart, End: windowStart.Add(windowDuration)}
+            }
+            windows[windowStart].Messages = append(windows[windowStart].Messages, msg)
+            windows[windowStart].Count++
+            
+        case <-ticker.C:
+            // Flush completed windows
+            now := time.Now().Truncate(windowDuration)
+            for start, window := range windows {
+                if start.Before(now) {
+                    FlushWindow(window)
+                    delete(windows, start)
+                }
+            }
+        }
+    }
+}
+```
+
+### 4. NATS JetStream
+
 ```go
 js, _ := nc.JetStream()
 sub, _ := js.PullSubscribe("events", "processor", 
@@ -137,75 +140,41 @@ sub, _ := js.PullSubscribe("events", "processor",
     nats.AckWait(30*time.Second),
     nats.MaxDeliver(3),
 )
-```
 
-## Redis Streams Integration
-
-**Consumer Group:**
-- XGROUP CREATE for consumer group
-- XREADGROUP for consumption
-- XACK for acknowledgment
-- XPENDING for monitoring
-- Claim abandoned messages
-
-## Windowing Operations
-
-**Time Windows:**
-- Tumbling: Non-overlapping fixed intervals
-- Sliding: Overlapping windows
-- Session: Gap-based windows
-
-**Count Windows:**
-- Fixed count per window
-- Trigger on count threshold
-
-**Example Tumbling Window:**
-```go
-type Window struct {
-    Start    time.Time
-    End      time.Time
-    Messages []Message
+for {
+    msgs, _ := sub.Fetch(10, nats.MaxWait(5*time.Second))
+    for _, msg := range msgs {
+        if err := ProcessMessage(ctx, msg); err == nil {
+            msg.Ack()
+        } else {
+            msg.Nak()
+        }
+    }
 }
-
-// 1-minute tumbling windows
-windowDuration := time.Minute
-windowStart := time.Now().Truncate(windowDuration)
 ```
 
-## Metrics & Monitoring
+## Code Style
 
-Track:
-- Messages processed per second
-- Processing latency (p50, p95, p99)
-- Consumer lag per partition
-- Error rate and types
-- State size and memory usage
+- Consumer goroutine per partition
+- Worker pool for parallel processing
+- Buffered channels between stages
+- Context-based cancellation for graceful shutdown
+- Idempotent processing (deduplicate by message ID)
+- Manual offset commits for exactly-once semantics
+- Dead letter queue for failed messages
+- Exponential backoff for retries
+- State in Redis for distributed processing
+- Time-based (tumbling/sliding) or count-based windowing
+- Prometheus metrics (messages processed, lag, latency)
+- Batch consumption for throughput
 
-**Prometheus Metrics:**
-```go
-messagesProcessed := prometheus.NewCounterVec(
-    prometheus.CounterOpts{
-        Name: "stream_messages_processed_total",
-    },
-    []string{"topic", "status"},
-)
-```
+## Stream Patterns
 
-## Testing Standards
-
-- Unit tests for processors
-- Mock message producers/consumers
-- Integration tests with embedded Kafka/Redis
-- Benchmarks for throughput
-- Chaos testing for failure scenarios
-
-## Performance Considerations
-
-- Consumer count = partition count (max)
-- Worker pool size based on CPU cores
-- Buffer sizes prevent blocking
-- Profile with pprof
-- Monitor GC pressure
+**Fan-out**: Single input → multiple processors  
+**Fan-in**: Multiple inputs → single processor  
+**Pipeline**: Chained processing stages  
+**Windowing**: Time or count-based aggregation  
+**Exactly-Once**: Transactional producers + idempotency keys
 
 ## Anti-Patterns
 
@@ -216,58 +185,4 @@ messagesProcessed := prometheus.NewCounterVec(
 ❌ Processing messages out of order within partition  
 ❌ Not implementing backpressure  
 ❌ Unbounded state growth  
-❌ Not monitoring consumer lag  
-
-## Dependencies
-
-Required:
-- `github.com/segmentio/kafka-go` (Kafka)
-- `github.com/nats-io/nats.go` (NATS)
-- `github.com/redis/go-redis/v9` (Redis)
-- `github.com/rs/zerolog` (logging)
-
-Optional:
-- `github.com/prometheus/client_golang` (metrics)
-- `github.com/sony/gobreaker` (circuit breaker)
-
-## Configuration
-
-Required:
-- `KAFKA_BROKERS` or `NATS_URL` or `REDIS_URL`
-- `TOPIC` or `STREAM_NAME`
-- `CONSUMER_GROUP`
-- `WORKER_COUNT` (default: NumCPU)
-
-Optional:
-- `BATCH_SIZE` (default: 100)
-- `FLUSH_INTERVAL` (default: 1s)
-- `MAX_RETRIES` (default: 3)
-- `DLQ_TOPIC` (dead letter queue)
-
-## Deployment Considerations
-
-- Stateless for horizontal scaling
-- One instance per partition minimum
-- Leader election for singleton tasks
-- Health checks include consumer lag
-- Graceful shutdown with timeout
-
-## Common Use Cases
-
-**1. Event Processing:**
-- Consume events from Kafka
-- Enrich with external data
-- Filter and transform
-- Produce to output topic
-
-**2. Real-time Analytics:**
-- Window-based aggregations
-- Count, sum, average operations
-- State stored in Redis
-- Results published to dashboard
-
-**3. Change Data Capture:**
-- Consume database changes
-- Transform to domain events
-- Publish to event bus
-- Update search indices
+❌ Not monitoring consumer lag

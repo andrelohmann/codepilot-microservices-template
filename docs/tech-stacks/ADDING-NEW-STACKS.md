@@ -14,6 +14,149 @@ To add a new technology stack, you need to:
 
 ---
 
+## 🏗️ The Three-File System Architecture
+
+The template uses a **three-layer documentation system** where each file has a distinct purpose and audience:
+
+### 1. Tech-Stack Documentation (Source of Truth)
+
+**Location:** `docs/tech-stacks/{service-type}/{tech}.md`  
+**Purpose:** Complete implementation reference  
+**Audience:** Developers and AI assistants  
+**Size:** 200-500 lines (comprehensive)
+
+**Contains:**
+- Complete technology overview and ecosystem
+- Detailed architecture patterns
+- Full code examples and implementations
+- Testing strategies with complete examples
+- Deployment configurations
+- Monitoring and observability setup
+- Performance optimization guidelines
+- Security best practices
+- Troubleshooting guides
+- Migration paths and upgrade strategies
+
+**Role:** The single source of truth for all technical details. When in doubt, refer to this document.
+
+### 2. Instruction Files (Copilot Guidance)
+
+**Location:** `templates/.github/instructions/service-{type}-{tech}.instructions.md`  
+**Purpose:** GitHub Copilot pattern recognition  
+**Audience:** GitHub Copilot (AI assistant)  
+**Size:** 130-200 lines (concise, pattern-focused)
+
+**Contains:**
+- YAML frontmatter with `applyTo` patterns (maps to directory patterns)
+- Core technology stack versions
+- Essential project structure
+- Key implementation patterns (not exhaustive)
+- Testing standards (frameworks and approach)
+- Anti-patterns (what NOT to do)
+- Critical dependencies list
+- **References to tech-stack docs** for complete details
+
+**Role:** Provides just-in-time context to Copilot when working in service directories. Auto-applied based on `applyTo` patterns.
+
+**Key Principle:** Should be **concise** and **reference** the tech-stack docs rather than duplicate content.
+
+### 3. Scaffold Prompts (Automation Templates)
+
+**Location:** `templates/.github/prompts/scaffold-{type}-{tech}-service.prompt.md`  
+**Purpose:** Automated service scaffolding  
+**Audience:** VS Code Prompt UI (for user-initiated scaffolding)  
+**Size:** 60-160 lines (streamlined, input-driven)
+
+**Contains:**
+- YAML frontmatter with VS Code prompt metadata
+  - `description`: Brief prompt description
+  - `mode: agent`: Enables agentic workflow
+  - `tools: [file, workspace, terminal]`: Available capabilities
+- **Input variables** using `${input:variableName:defaultValue}` syntax
+- High-level scaffolding steps (not exhaustive)
+- **References to both instruction files AND tech-stack docs**
+- Core file templates (simplified, not full implementations)
+- Docker and DevContainer basics
+- Completion checklist
+
+**Role:** Provides a guided, interactive scaffolding experience. Leverages VS Code's prompt UI for user inputs.
+
+**Key Principle:** Should be **streamlined** and **reference** other files rather than contain full implementations.
+
+---
+
+## 📐 Alignment Principles
+
+### Relationship Between Files
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│  Tech-Stack Docs (Source of Truth)                          │
+│  docs/tech-stacks/{type}/{tech}.md                          │
+│  • Complete implementation details                          │
+│  • Full code examples                                       │
+│  • Comprehensive guides                                     │
+└────────────────┬────────────────────────────────────────────┘
+                 │
+                 │ References
+                 │
+      ┌──────────┴──────────┐
+      │                     │
+      ▼                     ▼
+┌─────────────────┐   ┌─────────────────────────────┐
+│ Instructions    │   │ Scaffold Prompts            │
+│ (Copilot)       │   │ (VS Code)                   │
+│ • Concise       │   │ • Interactive               │
+│ • Patterns      │   │ • Input-driven              │
+│ • References    │   │ • References both           │
+└─────────────────┘   └─────────────────────────────┘
+```
+
+### Content Distribution Guidelines
+
+| Content Type | Tech-Stack Docs | Instructions | Prompts |
+|--------------|----------------|--------------|---------|
+| **Complete implementations** | ✅ Full | ❌ None | ❌ None |
+| **Code examples** | ✅ Many | ✅ Key patterns only | ❌ None |
+| **Architecture diagrams** | ✅ Detailed | ✅ Simple | ✅ Simple |
+| **Testing strategies** | ✅ Complete | ✅ Standards only | ✅ Checklist only |
+| **Configuration details** | ✅ All options | ✅ Critical only | ✅ Minimal |
+| **References to other files** | ❌ None | ✅ Yes | ✅ Yes |
+| **User input prompts** | ❌ No | ❌ No | ✅ Yes |
+
+### Anti-Duplication Strategy
+
+**❌ Don't:**
+- Copy full implementations across files
+- Duplicate code examples
+- Repeat detailed explanations
+- Create redundant content
+
+**✅ Do:**
+- Reference the tech-stack docs for details
+- Extract only essential patterns for instructions
+- Create concise prompts with input variables
+- Link between files explicitly
+
+**Example Reference Pattern:**
+
+```markdown
+<!-- In instruction file -->
+## See Also
+
+- [FastAPI Complete Documentation](../../docs/tech-stacks/apis/fastapi.md)
+- [API Overview](../../docs/tech-stacks/apis/README.md)
+
+<!-- In prompt file -->
+## Reference Documentation
+
+**Complete Implementation Details:**
+- Tech-Stack Docs: `docs/tech-stacks/apis/fastapi.md`
+- Instruction File: `templates/.github/instructions/service-api-fastapi.instructions.md`
+```
+
+---
+
 ## 🎯 Task List Principle
 
 **When generating task lists during the implementation process, always follow the 3S Principle:**
@@ -251,127 +394,170 @@ Description of what TO do.
 
 ### Step 3: Create Scaffold Prompt
 
-Create `templates/.github/prompts/scaffold-{type}-{tech}-service.md`
+Create `templates/.github/prompts/scaffold-{type}-{tech}-service.prompt.md`
+
+**VS Code Prompt Format (YAML Frontmatter + Markdown):**
+
+The prompt files use VS Code's native prompt format with three key components:
+
+1. **YAML Frontmatter** - Metadata for VS Code
+2. **Input Variables** - Interactive user prompts
+3. **Scaffolding Instructions** - Concise implementation steps
 
 **Template Structure:**
 
-1. **Service Specification** (Interactive form)
-2. **Architecture Overview** (ASCII diagram)
-3. **Directory Structure** (Complete file tree)
-4. **Implementation Steps** (18-20 detailed steps)
-5. **Core Files** (Complete code examples)
-6. **Docker Configuration** (Dockerfile + docker-compose)
-7. **DevContainer Setup** (devcontainer.json)
-8. **README Template** (Service documentation)
-9. **Completion Checklist** (Verification steps)
-
-**Key Sections:**
-
 ```markdown
+---
+description: Scaffold a new {Technology} {Service Type} service
+mode: agent
+tools:
+  - file
+  - workspace
+  - terminal
+---
+
 # Scaffold {Technology} {Service Type} Service
 
-## Service Specification
+## Service Information
 
-Please provide the following information:
+**Service Name:** ${input:serviceName:api-fastapi-example}
+**Service Purpose:** ${input:servicePurpose:Example API service}
 
-**Service Name:** `{type}-{tech}-{purpose}`
-**Purpose:** [Brief description]
-**Key Features:**
-- [ ] Feature 1
-- [ ] Feature 2
+**Additional Features:**
+${input:features:
+- [ ] Authentication
+- [ ] Database integration
+- [ ] Caching
+- [ ] Rate limiting
+}
+
+---
+
+## Reference Documentation
+
+**Complete Implementation Details:**
+- Tech-Stack Docs: `docs/tech-stacks/{service-type}/{tech}.md`
+- Instruction File: `templates/.github/instructions/service-{type}-{tech}.instructions.md`
+
+Refer to these files for complete implementation patterns, testing strategies, and best practices.
 
 ---
 
 ## Architecture Overview
 
 \`\`\`
-[ASCII Architecture Diagram]
-\`\`\`
-
----
-
-## Directory Structure
-
-\`\`\`
-services/{type}-{tech}-{purpose}/
-├── Complete file tree
+[Simple ASCII Architecture Diagram]
 \`\`\`
 
 ---
 
 ## Implementation Steps
 
-### Step 1: Initialize Project
+### Step 1: Create Project Structure
 
-Details and commands.
+Create the service directory with the following structure:
 
-### Step 2-20: [Continue with detailed steps]
-
----
-
-## Core Files
-
-### {config-file}
-
-\`\`\`{language}
-[Complete configuration]
+\`\`\`
+services/${input:serviceName}/
+├── src/
+├── tests/
+├── Dockerfile
+├── .dockerignore
+├── {config-file}
+├── .env.example
+└── README.md
 \`\`\`
 
-### src/main.{ext}
+### Step 2: Initialize Configuration
 
-\`\`\`{language}
-[Complete implementation]
-\`\`\`
+Create {config-file} with essential configuration.
 
-[Continue with all core files]
+### Step 3: Implement Core Application
 
----
+Create main application file at src/main.{ext}.
 
-## Docker Configuration
+### Step 4: Add Docker Configuration
 
-### Dockerfile
+Create production-ready multi-stage Dockerfile.
 
-\`\`\`dockerfile
-[Multi-stage production-ready Dockerfile]
-\`\`\`
+### Step 5: Create DevContainer
 
-### docker-compose.yml entry
+Set up .devcontainer/devcontainer.json for development.
 
-\`\`\`yaml
-[Service definition]
-\`\`\`
+### Step 6: Add Documentation
 
----
+Create comprehensive README.md.
 
-## DevContainer Configuration
+### Step 7: Verify Service
 
-\`\`\`json
-[Complete devcontainer.json]
-\`\`\`
-
----
-
-## README.md Template
-
-\`\`\`markdown
-[Complete README template]
-\`\`\`
+Run the completion checklist below.
 
 ---
 
 ## Completion Checklist
 
+After scaffolding, verify:
+
+- [ ] Service structure matches template
 - [ ] Service runs locally
-- [ ] Tests pass
 - [ ] Docker build successful
 - [ ] DevContainer works
-- [ ] Documentation complete
-- [ ] Environment variables configured
+- [ ] Tests pass
 - [ ] Health check responds
+- [ ] Environment variables documented
+- [ ] README complete
 - [ ] Logging configured
-- [ ] Metrics exposed
 - [ ] Production-ready
+
+---
+
+## Next Steps
+
+1. Review generated code
+2. Implement business logic
+3. Add integration tests
+4. Configure CI/CD
+5. Deploy to development environment
+
+For complete implementation patterns and best practices, refer to:
+- `docs/tech-stacks/{service-type}/{tech}.md`
 ```
+
+**Key Components Explained:**
+
+**1. YAML Frontmatter:**
+```yaml
+---
+description: Brief description shown in VS Code prompt picker
+mode: agent              # Enables agentic workflow with tool access
+tools:                   # Available capabilities
+  - file                 # File operations
+  - workspace            # Workspace operations  
+  - terminal             # Terminal commands
+---
+```
+
+**2. Input Variables:**
+```markdown
+${input:variableName:defaultValue}
+```
+
+Used for:
+- Service name
+- Service purpose
+- Optional features
+- Configuration values
+
+**3. Concise Instructions:**
+- High-level steps only (not exhaustive)
+- Reference tech-stack docs for complete details
+- Focus on scaffolding workflow
+- Include completion checklist
+
+**Size Guidelines:**
+- **Old format:** 700-900 lines (exhaustive)
+- **New format:** 60-160 lines (concise + references)
+- **Reduction:** ~90% shorter
 
 ---
 
@@ -478,28 +664,36 @@ Before considering a new stack complete, verify:
 - [ ] Examples added throughout documentation
 - [ ] README files updated
 
-### Instruction File
-- [ ] Follows template format (130-200 lines)
+### Instruction File (130-200 lines)
+- [ ] Follows template format
+- [ ] YAML frontmatter with `applyTo` patterns
 - [ ] Contains technology stack details
 - [ ] Includes project structure
-- [ ] Documents core patterns
+- [ ] Documents core patterns (not exhaustive)
 - [ ] Lists testing standards
 - [ ] Covers anti-patterns
-- [ ] Lists dependencies
-- [ ] Includes YAML frontmatter with `applyTo` patterns
+- [ ] Lists critical dependencies
+- [ ] **References tech-stack docs** for complete details
+- [ ] No duplicate content from tech-stack docs
 
-### Scaffold Prompt
-- [ ] Follows template format (700-900 lines)
-- [ ] Service specification form included
+### Scaffold Prompt (60-160 lines, .prompt.md format)
+- [ ] Follows VS Code prompt format
+- [ ] YAML frontmatter with `description`, `mode: agent`, `tools`
+- [ ] Input variables using `${input:name:default}` syntax
 - [ ] Architecture diagram present
-- [ ] Complete directory structure
-- [ ] 18-20 implementation steps
-- [ ] Full code examples for all core files
-- [ ] Production-ready Dockerfile
-- [ ] docker-compose.yml integration
-- [ ] DevContainer configuration
-- [ ] README template
-- [ ] Completion checklist
+- [ ] High-level implementation steps (concise)
+- [ ] Completion checklist included
+- [ ] **References both instruction file AND tech-stack docs**
+- [ ] No duplicate code examples
+- [ ] No full implementations (only references)
+
+### Alignment Between Files
+- [ ] **No content duplication** across three files
+- [ ] Tech-stack doc is the single source of truth
+- [ ] Instruction file references tech-stack doc
+- [ ] Prompt file references both instruction and tech-stack docs
+- [ ] Each file has distinct purpose and audience
+- [ ] Content distribution follows guidelines
 
 ### Service Configuration
 - [ ] Naming convention matches `{type}-{tech}-{purpose}` pattern
@@ -548,7 +742,7 @@ Before considering a new stack complete, verify:
 
 ## Example: Adding Rust Actix-Web
 
-Here's a complete example of adding a new stack:
+Here's a complete example of adding a new stack with the three-file system:
 
 ### 1. Update Documentation
 
@@ -578,9 +772,9 @@ Here's a complete example of adding a new stack:
 │                 (Perfect for: System-level APIs)
 ```
 
-### 2. Create Technology Documentation
+### 2. Create Technology Documentation (Source of Truth)
 
-**docs/tech-stacks/apis/actix.md:**
+**docs/tech-stacks/apis/actix.md (~400 lines):**
 ```markdown
 # Actix-Web - API Services
 
@@ -617,12 +811,147 @@ Actix-Web is a powerful, pragmatic, and extremely fast web framework for Rust.
    - High concurrent load
    - Resource-constrained environments
 
-[... continue with full documentation]
+## Project Structure
+
+\`\`\`
+services/api-actix-{purpose}/
+├── src/
+│   ├── main.rs
+│   ├── handlers/
+│   ├── models/
+│   ├── db/
+│   └── middleware/
+├── tests/
+├── Cargo.toml
+├── Dockerfile
+└── README.md
+\`\`\`
+
+## Complete Implementation
+
+### Main Application (src/main.rs)
+
+\`\`\`rust
+use actix_web::{web, App, HttpServer, HttpResponse};
+use actix_web::middleware::Logger;
+
+#[actix_web::main]
+async fn main() -> std::io::Result<()> {
+    env_logger::init();
+    
+    HttpServer::new(|| {
+        App::new()
+            .wrap(Logger::default())
+            .route("/health", web::get().to(health_check))
+            .route("/api/v1/resource", web::get().to(get_resources))
+    })
+    .bind("0.0.0.0:8080")?
+    .run()
+    .await
+}
+
+async fn health_check() -> HttpResponse {
+    HttpResponse::Ok().json(serde_json::json!({
+        "status": "healthy",
+        "service": "api-actix-example"
+    }))
+}
+
+// ... complete implementation
+\`\`\`
+
+### Configuration (Cargo.toml)
+
+\`\`\`toml
+[package]
+name = "api-actix-service"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+actix-web = "4.x"
+tokio = { version = "1", features = ["full"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+env_logger = "0.10"
+diesel = { version = "2", features = ["postgres"] }
+
+# ... complete dependencies
+\`\`\`
+
+## Testing Strategies
+
+### Unit Tests
+
+\`\`\`rust
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use actix_web::{test, App};
+
+    #[actix_web::test]
+    async fn test_health_check() {
+        let app = test::init_service(
+            App::new().route("/health", web::get().to(health_check))
+        ).await;
+        
+        let req = test::TestRequest::get()
+            .uri("/health")
+            .to_request();
+            
+        let resp = test::call_service(&app, req).await;
+        assert!(resp.status().is_success());
+    }
+}
+\`\`\`
+
+## Deployment
+
+### Production Dockerfile
+
+\`\`\`dockerfile
+# Build stage
+FROM rust:1.70-slim as builder
+WORKDIR /app
+COPY Cargo.toml Cargo.lock ./
+COPY src ./src
+RUN cargo build --release
+
+# Production stage
+FROM debian:bookworm-slim
+RUN apt-get update && apt-get install -y libpq5 && rm -rf /var/lib/apt/lists/*
+COPY --from=builder /app/target/release/api-actix-service /usr/local/bin/
+USER 1000
+EXPOSE 8080
+CMD ["api-actix-service"]
+\`\`\`
+
+## Performance Optimization
+
+[... detailed performance tuning strategies]
+
+## Security Best Practices
+
+[... comprehensive security guidelines]
+
+## Monitoring & Observability
+
+[... complete monitoring setup]
+
+## Troubleshooting
+
+[... common issues and solutions]
+
+## See Also
+
+- [API Services Overview](./README.md)
+- [Naming Conventions](../NAMING-CONVENTIONS.md)
+- [Decision Tree](../DECISION-TREE.md)
 ```
 
-### 3. Create Instruction File
+### 3. Create Instruction File (Copilot Guidance)
 
-**templates/.github/instructions/service-api-actix.instructions.md:**
+**templates/.github/instructions/service-api-actix.instructions.md (~150 lines):**
 ```markdown
 ---
 applyTo:
@@ -649,93 +978,366 @@ services/api-actix-{purpose}/
 │   ├── main.rs
 │   ├── handlers/
 │   ├── models/
-│   ├── db/
-│   └── middleware/
+│   └── db/
 ├── tests/
 ├── Cargo.toml
 ├── Dockerfile
 └── README.md
 \`\`\`
 
-[... continue with patterns, testing, etc.]
+## Core Patterns
+
+### Pattern 1: Handler Functions
+
+\`\`\`rust
+async fn handler_name(data: web::Data<AppState>) -> HttpResponse {
+    // Handler logic
+    HttpResponse::Ok().json(response)
+}
+\`\`\`
+
+### Pattern 2: Middleware
+
+\`\`\`rust
+use actix_web::middleware::Logger;
+
+App::new()
+    .wrap(Logger::default())
+    .route("/api/v1/resource", web::get().to(handler))
+\`\`\`
+
+## Testing Standards
+
+### Unit Tests
+- Use `actix_web::test` utilities
+- Mock external dependencies
+- Test handlers independently
+
+### Integration Tests
+- Test complete request/response cycle
+- Use test database
+- Verify error handling
+
+## Anti-Patterns
+
+### ❌ Blocking Operations in Async Handlers
+
+Don't use blocking I/O in async functions.
+
+### ✅ Use Tokio Spawn Blocking
+
+\`\`\`rust
+web::block(|| {
+    // Blocking operation
+}).await
+\`\`\`
+
+## Dependencies
+
+### Production
+- actix-web 4.x
+- tokio (async runtime)
+- serde (serialization)
+
+### Development
+- actix-web-test
+- cargo-watch
+
+## See Also
+
+- [Actix-Web Complete Documentation](../../docs/tech-stacks/apis/actix.md)
+- [API Overview](../../docs/tech-stacks/apis/README.md)
 ```
 
-### 4. Create Scaffold Prompt
+### 4. Create Scaffold Prompt (VS Code Format)
 
-**templates/.github/prompts/scaffold-api-actix-service.md:**
+**templates/.github/prompts/scaffold-api-actix-service.prompt.md (~120 lines):**
 ```markdown
+---
+description: Scaffold a new Actix-Web API service
+mode: agent
+tools:
+  - file
+  - workspace
+  - terminal
+---
+
 # Scaffold Actix-Web API Service
 
-## Service Specification
+## Service Information
 
-**Service Name:** `api-actix-{purpose}`
-**Purpose:** [Brief description]
+**Service Name:** ${input:serviceName:api-actix-example}
+**Service Purpose:** ${input:servicePurpose:Example API service}
 
-[... complete scaffold with 700-900 lines]
+**Features:**
+${input:features:
+- [ ] Authentication
+- [ ] Database integration
+- [ ] Caching
+- [ ] Rate limiting
+}
+
+---
+
+## Reference Documentation
+
+**Complete Implementation Details:**
+- Tech-Stack Docs: `docs/tech-stacks/apis/actix.md`
+- Instruction File: `templates/.github/instructions/service-api-actix.instructions.md`
+
+Refer to these files for complete implementation patterns, testing strategies, and best practices.
+
+---
+
+## Architecture Overview
+
+\`\`\`
+┌─────────────────┐
+│   API Gateway   │
+└────────┬────────┘
+         │
+    ┌────▼─────┐
+    │  Actix   │
+    │  Router  │
+    └────┬─────┘
+         │
+    ┌────▼─────┐
+    │ Handlers │
+    └────┬─────┘
+         │
+    ┌────▼─────┐
+    │ Database │
+    └──────────┘
+\`\`\`
+
+---
+
+## Implementation Steps
+
+### Step 1: Create Project Structure
+
+Create the service directory:
+
+\`\`\`
+services/${input:serviceName}/
+├── src/
+│   ├── main.rs
+│   └── handlers/
+├── tests/
+├── Cargo.toml
+├── Dockerfile
+└── README.md
+\`\`\`
+
+### Step 2: Initialize Cargo Configuration
+
+Create Cargo.toml with required dependencies.
+
+### Step 3: Implement Main Application
+
+Create src/main.rs with HTTP server setup.
+
+### Step 4: Add Health Check Endpoint
+
+Implement basic health check at /health.
+
+### Step 5: Create Dockerfile
+
+Add production-ready multi-stage Dockerfile.
+
+### Step 6: Add DevContainer Configuration
+
+Set up .devcontainer/devcontainer.json.
+
+### Step 7: Create Documentation
+
+Add comprehensive README.md.
+
+---
+
+## Completion Checklist
+
+After scaffolding, verify:
+
+- [ ] Service structure created
+- [ ] Cargo.toml configured
+- [ ] Main application implemented
+- [ ] Health check responds
+- [ ] Docker build successful
+- [ ] Tests pass
+- [ ] DevContainer works
+- [ ] README complete
+
+---
+
+## Next Steps
+
+1. Implement business logic in handlers
+2. Add database integration
+3. Write integration tests
+4. Configure CI/CD pipeline
+
+For complete patterns, refer to `docs/tech-stacks/apis/actix.md`.
 ```
 
-### 5. Test Implementation
+### 5. File Size Comparison
 
-```bash
-# Create test service
-# (Using GitHub Copilot with the scaffold prompt)
+| File | Old Format | New Format | Reduction |
+|------|-----------|-----------|-----------|
+| **Tech-Stack Doc** | 400 lines | 400 lines | 0% (source of truth) |
+| **Instruction File** | 200 lines | 150 lines | 25% (concise patterns) |
+| **Scaffold Prompt** | 850 lines | 120 lines | 86% (references only) |
+| **Total** | 1,450 lines | 670 lines | **54% reduction** |
 
-# Build
-cd services/api-actix-test
-cargo build
+### 6. Content Distribution
 
-# Run tests
-cargo test
+**Tech-Stack Doc (400 lines):**
+- Complete implementation examples ✅
+- Full configuration files ✅
+- Comprehensive testing strategies ✅
+- Deployment guides ✅
+- Performance optimization ✅
+- Security best practices ✅
 
-# Build Docker
-docker build -t api-actix-test .
+**Instruction File (150 lines):**
+- Core patterns only ✅
+- Essential anti-patterns ✅
+- Testing standards (not examples) ✅
+- References tech-stack doc ✅
 
-# Run
-docker-compose up api-actix-test
-
-# Test health endpoint
-curl http://localhost:8080/health
-```
-
-### 6. Update Related Docs
-
-- Create `docs/tech-stacks/apis/actix.md` with complete documentation
-- Update `docs/tech-stacks/apis/README.md` with Actix entry
-- Add to `docs/getting-started/` examples
-- Create ADR: `docs/adr/005-actix-web-stack.md`
+**Scaffold Prompt (120 lines):**
+- Input variables for customization ✅
+- High-level steps ✅
+- References both files ✅
+- No duplicate code ✅
 
 ---
 
 ## Common Pitfalls
 
+### ❌ Content Duplication
+
+**Problem:** Copying full implementations across all three files.
+
+**Solution:**
+- Put complete details ONLY in tech-stack docs
+- Reference tech-stack docs from instruction files
+- Reference both files from scaffold prompts
+- Extract only essential patterns for instructions
+
+**Example:**
+```markdown
+<!-- ❌ Wrong: Duplicating in instruction file -->
+## Database Connection
+
+Complete implementation with 50 lines of code...
+
+<!-- ✅ Right: Reference + essential pattern -->
+## Database Connection
+
+See complete implementation in `docs/tech-stacks/apis/fastapi.md#database-connection`
+
+Essential pattern:
+\`\`\`python
+db = Database(settings.database_url)
+\`\`\`
+```
+
+### ❌ Missing VS Code Prompt Format
+
+**Problem:** Using old markdown format instead of VS Code prompt format.
+
+**Solution:**
+- Always include YAML frontmatter
+- Use `mode: agent` for agentic workflows
+- Define `tools: [file, workspace, terminal]`
+- Use `.prompt.md` file extension
+
+**Example:**
+```markdown
+<!-- ✅ Right: VS Code format -->
+---
+description: Scaffold a new FastAPI service
+mode: agent
+tools:
+  - file
+  - workspace
+  - terminal
+---
+
+# Scaffold FastAPI Service
+
+**Service Name:** ${input:serviceName:api-fastapi-example}
+```
+
+### ❌ Missing Input Variables
+
+**Problem:** Hard-coding values instead of using input variables.
+
+**Solution:**
+- Use `${input:variableName:defaultValue}` syntax
+- Prompt for service name, purpose, features
+- Make prompts interactive and reusable
+
+**Example:**
+```markdown
+<!-- ❌ Wrong: Hard-coded -->
+**Service Name:** api-fastapi-example
+
+<!-- ✅ Right: Input variable -->
+**Service Name:** ${input:serviceName:api-fastapi-example}
+```
+
 ### ❌ Incomplete Documentation
 
-Don't just add the technology - update ALL documentation:
+**Problem:** Adding technology but not updating all documentation.
+
+**Solution:** Update ALL documentation:
 - Quick reference tables
 - Decision trees
+- Naming conventions
 - Examples throughout
 
 ### ❌ Missing Tests
 
-Always include test structure and examples in:
-- Instruction file
-- Scaffold prompt
-- Sample service
+**Problem:** No test structure or examples.
+
+**Solution:** Always include test structure and examples in:
+- Tech-stack docs (complete examples)
+- Instruction file (testing standards)
+- Scaffold prompt (test checklist)
+- Sample service (working tests)
 
 ### ❌ Non-Production Docker
 
-Ensure Dockerfile is:
-- Multi-stage
+**Problem:** Development-only Dockerfile.
+
+**Solution:** Ensure Dockerfile is:
+- Multi-stage (build + production)
 - Secure (non-root user)
 - Optimized (minimal image size)
 - Includes health check
+- Production-ready
 
 ### ❌ Inconsistent Naming
 
-Follow the exact pattern:
+**Problem:** Not following naming conventions.
+
+**Solution:** Follow the exact pattern:
 - `{type}-{tech}-{purpose}`
 - kebab-case
 - No abbreviations in type/tech
+- Use official technology names
+
+### ❌ Oversized Prompt Files
+
+**Problem:** 700-900 line prompt files with full implementations.
+
+**Solution:**
+- Keep prompts 60-160 lines
+- Use input variables for customization
+- Reference tech-stack docs for details
+- Focus on scaffolding workflow, not complete implementation
 
 ---
 
@@ -745,6 +1347,46 @@ Follow the exact pattern:
 - Check instruction files in `templates/.github/instructions/`
 - Check scaffold prompts in `templates/.github/prompts/`
 - Refer to this guide for the complete process
+- Follow the three-file system architecture
+- Maintain alignment between files
+
+---
+
+## Key Takeaways
+
+### The Three-File System
+
+1. **Tech-Stack Docs** = Complete source of truth (200-500 lines)
+2. **Instruction Files** = Concise Copilot guidance (130-200 lines)
+3. **Scaffold Prompts** = Interactive VS Code prompts (60-160 lines)
+
+### Alignment Principles
+
+- **No duplication** - Each file has distinct purpose
+- **Reference, don't repeat** - Link between files
+- **Complete once, reference many** - Single source of truth
+
+### VS Code Prompt Format
+
+```yaml
+---
+description: Brief description
+mode: agent
+tools: [file, workspace, terminal]
+---
+```
+
+### Input Variables
+
+```markdown
+${input:variableName:defaultValue}
+```
+
+### File Naming
+
+- Instruction files: `service-{type}-{tech}.instructions.md`
+- Scaffold prompts: `scaffold-{type}-{tech}-service.prompt.md`
+- Tech-stack docs: `{tech}.md`
 
 ---
 
@@ -754,8 +1396,9 @@ Follow the exact pattern:
 - **[Decision Tree](./DECISION-TREE.md)** - Technology selection
 - **[Anti-Patterns](./ANTI-PATTERNS.md)** - What to avoid
 - **[Tech Stacks Overview](./README.md)** - All available stacks
+- **[Alignment TODOs](./ALIGNMENT-TODOS.md)** - Alignment project progress
 
 ---
 
-**Last Updated:** 2025-10-09  
-**Template Version:** 1.0.0
+**Last Updated:** 2025-01-XX  
+**Template Version:** 2.0.0 (Three-File System with VS Code Prompts)

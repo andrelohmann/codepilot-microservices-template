@@ -7,14 +7,8 @@ applyTo:
 
 Apply to background job processing services using Go with goroutines and channels.
 
-## Technology Stack
-
-- **Language:** Go 1.21+
-- **Concurrency:** Goroutines and channels
-- **Queue:** Redis (optional), In-memory channels
-- **Logging:** zerolog
-- **Metrics:** Prometheus (optional)
-- **Configuration:** viper or godotenv
+**Reference**: [Complete Golang Worker Tech Stack Documentation](../../../docs/tech-stacks/workers/golang.md)  
+**Scaffold**: Use the `scaffold-worker-golang-service.prompt.md` for new services
 
 ## Project Structure
 
@@ -27,144 +21,121 @@ services/worker-golang-{purpose}/
 │   ├── handlers/
 │   ├── queue/
 │   └── services/
-├── pkg/
-├── go.mod
-├── Dockerfile
-└── README.md
+└── go.mod
 ```
 
-## Core Patterns
+## Quick Reference Patterns
 
-**Worker Pool:**
-- Use `sync.WaitGroup` for worker lifecycle management
-- Create fixed-size worker pools (default: NumCPU workers)
-- Worker function: `func worker(id int, jobs <-chan Job, results chan<- Result)`
-- Graceful shutdown with context cancellation
+### 1. Worker Pool
 
-**Job Processing:**
-- Define job interface: `type Job interface { Execute(ctx context.Context) error }`
-- Implement retry logic with exponential backoff
-- Max retries configurable per job type (default: 3)
-- Job timeout enforcement via `context.WithTimeout`
+```go
+func worker(id int, jobs <-chan Job, results chan<- Result, wg *sync.WaitGroup) {
+    defer wg.Done()
+    defer func() {
+        if r := recover(); r != nil {
+            log.Error().Msgf("worker %d panic: %v", id, r)
+        }
+    }()
+    
+    for job := range jobs {
+        ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+        if err := job.Execute(ctx); err != nil {
+            results <- Result{JobID: job.ID, Error: err}
+        }
+        cancel()
+    }
+}
+```
 
-**Channel Usage:**
-- Buffered channels for job queue (buffer size: 100-1000)
-- Unbuffered channels for results
-- Close channels in sender, not receiver
-- Use `select` with `context.Done()` for cancellation
+### 2. Job with Retry
 
-**Error Handling:**
-- Wrap errors with context: `fmt.Errorf("job failed: %w", err)`
-- Log errors with job ID and attempt number
-- Failed jobs sent to dead letter queue after max retries
-- Panic recovery in each worker goroutine
-
-**Graceful Shutdown:**
-- Listen for SIGINT/SIGTERM signals
-- Cancel context to stop accepting new jobs
-- Wait for in-flight jobs to complete (timeout: 30s)
-- Flush metrics and close connections
-
-**Queue Integration:**
-- Redis Pub/Sub for distributed workers (optional)
-- In-memory channels for single-instance workers
-- Job serialization using JSON or Protocol Buffers
-- Acknowledge jobs only after successful processing
-
-**Concurrency Control:**
-- Use `sync.Mutex` for shared state protection
-- Rate limiting with `golang.org/x/time/rate`
-- Semaphore pattern for resource limiting
-- Atomic operations for counters (`sync/atomic`)
-
-**Metrics & Monitoring:**
-- Track jobs processed, failed, in-flight
-- Measure job execution duration
-- Expose `/metrics` endpoint for Prometheus
-- Health check endpoint: `/health`
-
-## Job Types
-
-**Example Job Structure:**
 ```go
 type EmailJob struct {
-    ID        string
-    To        string
-    Subject   string
-    Body      string
-    Retries   int
+    ID         string
+    To         string
+    Subject    string
+    Body       string
+    Retries    int
     MaxRetries int
 }
 
 func (j *EmailJob) Execute(ctx context.Context) error {
-    // Implementation
+    for j.Retries <= j.MaxRetries {
+        select {
+        case <-ctx.Done():
+            return ctx.Err()
+        default:
+            if err := sendEmail(j.To, j.Subject, j.Body); err != nil {
+                j.Retries++
+                time.Sleep(time.Duration(j.Retries) * time.Second) // Backoff
+                continue
+            }
+            return nil
+        }
+    }
+    return fmt.Errorf("max retries exceeded")
 }
 ```
 
-## Configuration
+### 3. Graceful Shutdown
 
-Required:
-- `WORKER_COUNT` (default: runtime.NumCPU())
-- `QUEUE_SIZE` (default: 1000)
-- `MAX_RETRIES` (default: 3)
-- `SHUTDOWN_TIMEOUT` (default: 30s)
+```go
+func main() {
+    ctx, cancel := context.WithCancel(context.Background())
+    defer cancel()
+    
+    jobs := make(chan Job, 1000)
+    results := make(chan Result, 100)
+    var wg sync.WaitGroup
+    
+    // Start workers
+    for i := 0; i < runtime.NumCPU(); i++ {
+        wg.Add(1)
+        go worker(i, jobs, results, &wg)
+    }
+    
+    // Graceful shutdown
+    sigChan := make(chan os.Signal, 1)
+    signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
+    <-sigChan
+    
+    log.Info().Msg("Shutting down...")
+    close(jobs)
+    wg.Wait()
+    close(results)
+}
+```
 
-Optional:
-- `REDIS_URL` (for distributed queuing)
-- `METRICS_PORT` (default: 9090)
-- `LOG_LEVEL` (default: info)
+### 4. Rate Limiting
 
-## Testing Standards
+```go
+import "golang.org/x/time/rate"
 
-- Test worker pool startup/shutdown
-- Test job execution with timeouts
-- Test retry logic and backoff
-- Mock external dependencies
-- Benchmark concurrent job processing
+limiter := rate.NewLimiter(rate.Limit(10), 100) // 10 jobs/sec, burst 100
 
-## Performance Optimizations
+func worker(id int, jobs <-chan Job, limiter *rate.Limiter) {
+    for job := range jobs {
+        limiter.Wait(context.Background())
+        job.Execute(context.Background())
+    }
+}
+```
 
-- Pre-allocate worker goroutines at startup
-- Use buffered channels sized to workload
-- Profile with pprof for bottlenecks
-- Implement job batching where applicable
-- Consider sync.Pool for frequent allocations
+## Code Style
 
-## Security Requirements
-
-- Validate job payloads before execution
-- Sanitize external inputs
-- Use TLS for Redis connections
-- Authenticate metrics endpoints
-- Limit resource consumption per job
+- Use `sync.WaitGroup` for worker lifecycle
+- Fixed-size worker pools (default: `runtime.NumCPU()`)
+- Buffered channels for job queue (100-1000)
+- Always recover from panics in goroutines
+- Context cancellation for graceful shutdown
+- Exponential backoff for retries
 
 ## Anti-Patterns
 
 ❌ Creating goroutines without cleanup  
 ❌ Unbounded goroutine spawning  
 ❌ Ignoring context cancellation  
-❌ Deadlocks from improper channel usage  
 ❌ Not closing channels  
 ❌ Race conditions on shared state  
 ❌ Missing panic recovery in goroutines  
-❌ Blocking operations without timeouts  
-
-## Dependencies
-
-Required:
-- `github.com/rs/zerolog`
-- Standard library (`context`, `sync`, `time`)
-
-Optional:
-- `github.com/go-redis/redis/v9` (distributed queue)
-- `github.com/prometheus/client_golang` (metrics)
-- `golang.org/x/time/rate` (rate limiting)
-- `github.com/spf13/viper` (configuration)
-
-## Lifecycle Hooks
-
-- `OnStart()` - Initialize connections
-- `OnShutdown()` - Cleanup resources
-- `OnJobStart()` - Per-job setup
-- `OnJobComplete()` - Per-job cleanup
-- `OnJobError()` - Error handling
+❌ Blocking operations without timeouts

@@ -7,63 +7,34 @@ description: Static site generator with React, Vite, MDX, and Tailwind
 
 Build static websites from markdown content with React components.
 
+**Reference**: [Complete React SSG Tech Stack Documentation](../../../docs/tech-stacks/ssg/react.md)  
+**Scaffold**: Use the `scaffold-ssg-react-service.prompt.md` for new services
+
 ## Naming Convention
 
 `ssg-react-{purpose}` (e.g., `ssg-react-docs`, `ssg-react-blog`, `ssg-react-marketing`)
 
-## Technology Stack
-
-- React 18+ (components)
-- TypeScript (type safety)
-- Vite + vite-plugin-static-routes (SSG)
-- Tailwind CSS (styling)
-- MDX (markdown + React)
-- React Router (navigation)
-- Gray Matter (frontmatter)
-- Remark/Rehype (markdown processing)
-
-## Directory Structure
+## Project Structure
 
 ```
 services/ssg-react-{purpose}/
-├── content/              # Markdown files = pages
-│   ├── index.md
-│   ├── about.md
+├── content/            # Markdown files = pages
+│   ├── index.md        # → /
+│   ├── about.md        # → /about
 │   └── docs/
-│       └── guide.md
+│       └── guide.md    # → /docs/guide
 ├── src/
-│   ├── components/      # React components
-│   │   ├── Layout.tsx
-│   │   ├── Header.tsx
-│   │   ├── Footer.tsx
-│   │   └── ContactForm.tsx
+│   ├── components/     # React components
 │   ├── pages/
-│   │   └── [...slug].tsx
 │   ├── lib/
-│   │   ├── markdown.ts
-│   │   └── api.ts
 │   └── styles/
-│       └── globals.css
-├── public/
-├── Dockerfile
-├── package.json
-├── vite.config.ts
-└── tailwind.config.ts
+└── vite.config.ts
 ```
 
-## Content Structure
+## Quick Reference Patterns
 
-Markdown files define hierarchy:
-```
-content/
-├── index.md              → /
-├── about.md              → /about
-└── products/
-    ├── index.md          → /products
-    └── service-a.md      → /products/service-a
-```
+### 1. Markdown with Frontmatter
 
-Frontmatter metadata:
 ```markdown
 ---
 title: "Page Title"
@@ -72,12 +43,11 @@ layout: "default"
 date: "2025-01-07"
 ---
 
-# Content
+# Content starts here
 ```
 
-## React Components in Markdown
+### 2. MDX with React Components
 
-Use MDX to embed components:
 ```markdown
 <InfoBox type="warning">
   Important information
@@ -93,7 +63,7 @@ npm install
 />
 ```
 
-## Vite Configuration
+### 3. Vite Config
 
 ```typescript
 import { defineConfig } from 'vite';
@@ -110,23 +80,14 @@ export default defineConfig({
   ],
   build: {
     outDir: 'dist',
-    emptyOutDir: true
   }
 });
 ```
 
-## Form Integration
+### 4. Form Integration
 
-Forms POST to REST APIs:
 ```tsx
-<form action="https://api.example.com/contact" method="POST">
-  <input name="email" type="email" required />
-  <button type="submit">Submit</button>
-</form>
-```
-
-Or use React state:
-```tsx
+// React state form
 const handleSubmit = async (data) => {
   await fetch('https://api.example.com/contact', {
     method: 'POST',
@@ -135,34 +96,17 @@ const handleSubmit = async (data) => {
 };
 ```
 
-## Build Process
+## Code Style
 
-1. Parse markdown files → extract frontmatter
-2. Generate routes from file structure
-3. Render React + markdown content
-4. Apply Tailwind classes
-5. Output static HTML/CSS/JS
-
-## Dockerfile
-
-```dockerfile
-FROM node:20-alpine AS build
-WORKDIR /app
-COPY package*.json ./
-RUN npm ci
-COPY . .
-RUN npm run build
-
-FROM nginx:alpine
-COPY --from=build /app/dist /usr/share/nginx/html
-EXPOSE 80
-```
-
-## Testing
-
-- Vitest (component tests)
-- Playwright (E2E, forms)
-- Markdownlint (content validation)
+- Content in `/content/` directory
+- File structure = URL structure
+- Frontmatter for metadata
+- MDX for embedding React components
+- Forms POST to REST APIs
+- Tailwind CSS for styling
+- Vite for build tooling
+- Output static HTML/CSS/JS to `/dist`
+- Serve with Nginx
 
 ## Anti-Patterns
 

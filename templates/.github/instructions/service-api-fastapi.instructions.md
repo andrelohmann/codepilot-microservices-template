@@ -3,64 +3,56 @@ applyTo: "**/api-fastapi-*/**"
 description: FastAPI service with Python, Pydantic, SQLAlchemy, and async support
 ---
 
-# API FastAPI - Modern Python API
+# FastAPI API Service - Copilot Guidance
 
-Build high-performance RESTful APIs with FastAPI using async Python and Pydantic validation.
+Quick reference for GitHub Copilot when working with FastAPI API services.
+
+## Reference Documentation
+
+- **[Complete FastAPI Tech-Stack Guide](../../../docs/tech-stacks/apis/fastapi.md)** - Full implementation details, examples, and best practices
+- **[Scaffold Prompt](../prompts/scaffold-fastapi-service.prompt.md)** - Generate new FastAPI services
 
 ## Naming Convention
 
-`api-fastapi-{purpose}` (e.g., `api-fastapi-auth`, `api-fastapi-catalog`)
-
-## Technology Stack
-
-- FastAPI 0.104+ (framework)
-- Python 3.11+ (language)
-- Pydantic 2+ (validation/serialization)
-- SQLAlchemy 2+ (ORM with async support)
-- Alembic (migrations)
-- python-jose (JWT)
-- passlib (password hashing)
-- pytest + httpx (testing)
+`api-fastapi-{purpose}` (e.g., `api-fastapi-auth`, `api-fastapi-billing`)
 
 ## Project Structure
 
 ```
 services/api-fastapi-{purpose}/
 ├── src/
-│   ├── main.py
-│   ├── config.py
-│   ├── database.py
-│   ├── models/
-│   │   ├── __init__.py
-│   │   └── user.py
-│   ├── schemas/
-│   │   ├── __init__.py
-│   │   └── user.py
-│   ├── routers/
-│   │   ├── __init__.py
-│   │   ├── users.py
-│   │   └── auth.py
-│   ├── services/
-│   │   └── user_service.py
-│   ├── dependencies.py
-│   └── middleware/
-├── tests/
-│   ├── __init__.py
-│   ├── conftest.py
-│   └── test_users.py
-├── alembic/
-│   └── versions/
+│   ├── main.py              # FastAPI app initialization
+│   ├── config.py            # Pydantic Settings
+│   ├── database.py          # SQLAlchemy async setup
+│   ├── models/              # SQLAlchemy ORM models
+│   ├── schemas/             # Pydantic validation models
+│   ├── routers/             # API route handlers
+│   ├── services/            # Business logic layer
+│   ├── dependencies.py      # FastAPI dependencies
+│   └── middleware/          # Custom middleware
+├── tests/                   # pytest test suite
+├── alembic/                 # Database migrations
 ├── Dockerfile
 ├── requirements.txt
 └── pyproject.toml
 ```
 
-## Core Patterns
+## Copilot Coding Guidance
 
-### Router Structure
-Each domain = one router module:
+### Use These Patterns
+
+1. **Async Everything** - All I/O operations must use `async/await`
+2. **Pydantic v2** - Use `BaseModel` with `model_config = ConfigDict(from_attributes=True)`
+3. **SQLAlchemy 2.0** - Use `Mapped[type]` and `mapped_column()` syntax
+4. **Dependency Injection** - Use `Depends()` for database sessions, auth, etc.
+5. **Router Organization** - One router per domain (`users.py`, `auth.py`)
+6. **Type Hints** - All functions must have complete type annotations
+
+### Quick Patterns Reference
+
+**Router with Async DB**:
 ```python
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
 router = APIRouter(prefix="/users", tags=["users"])
@@ -74,170 +66,46 @@ async def create_user(
     pass
 ```
 
-### Pydantic Schemas
-Use Pydantic v2 models for validation:
+**Pydantic Schema**:
 ```python
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, EmailStr
 
 class UserCreate(BaseModel):
     email: EmailStr
-    password: str = Field(min_length=8)
+    password: str
     
 class UserResponse(BaseModel):
     id: int
     email: str
-    
     model_config = ConfigDict(from_attributes=True)
 ```
 
-### SQLAlchemy Models
-Use SQLAlchemy 2.0 style with async:
+**SQLAlchemy Model**:
 ```python
 from sqlalchemy.orm import Mapped, mapped_column
-from sqlalchemy.ext.asyncio import AsyncAttrs
 
-class User(AsyncAttrs, Base):
+class User(Base):
     __tablename__ = "users"
-    
     id: Mapped[int] = mapped_column(primary_key=True)
     email: Mapped[str] = mapped_column(unique=True)
-    hashed_password: Mapped[str]
 ```
 
-### Async Database Sessions
-Use dependency injection for sessions:
-```python
-async def get_db() -> AsyncGenerator[AsyncSession, None]:
-    async with async_session_maker() as session:
-        try:
-            yield session
-            await session.commit()
-        except Exception:
-            await session.rollback()
-            raise
-```
+### Code Style
 
-## Configuration
+- **Imports**: Group by stdlib, third-party, local
+- **Naming**: `snake_case` for functions/variables, `PascalCase` for classes
+- **Async**: Prefix async functions with `async def`, use `await` for all I/O
+- **Error Handling**: Use `HTTPException` with appropriate status codes
+- **Testing**: Write async tests with `@pytest.mark.asyncio`
 
-Use Pydantic Settings:
-```python
-from pydantic_settings import BaseSettings, SettingsConfigDict
+### Anti-Patterns to Avoid
 
-class Settings(BaseSettings):
-    database_url: str
-    jwt_secret: str = Field(min_length=32)
-    
-    model_config = SettingsConfigDict(
-        env_file=".env",
-        case_sensitive=False
-    )
-```
+❌ Synchronous database operations  
+❌ Missing Pydantic validation  
+❌ Hardcoded configuration values  
+❌ Blocking I/O in async functions  
+❌ Missing type hints  
+❌ No error handling  
 
-## Middleware & Dependencies
+For detailed examples, deployment guides, testing strategies, and advanced patterns, refer to the [FastAPI Tech-Stack Documentation](../../../docs/tech-stacks/apis/fastapi.md).
 
-### CORS Configuration
-```python
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],  # Restrict in production
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-```
-
-### Authentication Dependency
-```python
-async def get_current_user(
-    token: str = Depends(oauth2_scheme),
-    db: AsyncSession = Depends(get_db),
-) -> User:
-    # Verify JWT and return user
-    pass
-```
-
-## Testing Standards
-
-### Test Structure
-- Unit tests: Test individual functions
-- Integration tests: Test with database
-- Coverage target: >80%
-
-### Test Fixtures
-```python
-@pytest.fixture
-async def db_session():
-    async with async_session_maker() as session:
-        yield session
-        await session.rollback()
-
-@pytest.fixture
-def client(db_session):
-    app.dependency_overrides[get_db] = lambda: db_session
-    return TestClient(app)
-```
-
-### Async Testing
-```python
-@pytest.mark.asyncio
-async def test_create_user(client):
-    response = client.post("/users/", json={
-        "email": "test@example.com",
-        "password": "secure123"
-    })
-    assert response.status_code == 201
-```
-
-## Anti-Patterns
-
-❌ **Avoid:**
-- Synchronous database operations (use async)
-- Missing Pydantic validation on endpoints
-- Hardcoded secrets in code
-- Blocking I/O operations (file, network)
-- Missing error handling
-- No request/response models
-- Missing database migrations
-- Insufficient test coverage (<60%)
-
-✅ **Do:**
-- Use async/await for all I/O operations
-- Define Pydantic models for all endpoints
-- Use environment variables for configuration
-- Implement proper exception handlers
-- Use dependency injection
-- Version your API routes (/v1/)
-- Write comprehensive tests
-- Document endpoints with OpenAPI
-
-## Dependencies
-
-### Core
-```
-fastapi==0.104.1
-uvicorn[standard]==0.24.0
-pydantic==2.5.0
-pydantic-settings==2.1.0
-```
-
-### Database
-```
-sqlalchemy[asyncio]==2.0.23
-alembic==1.13.0
-asyncpg==0.29.0
-```
-
-### Auth
-```
-python-jose[cryptography]==3.3.0
-passlib[bcrypt]==1.7.4
-python-multipart==0.0.6
-```
-
-### Testing
-```
-pytest==7.4.3
-pytest-asyncio==0.21.1
-httpx==0.25.2
-pytest-cov==4.1.0
-```

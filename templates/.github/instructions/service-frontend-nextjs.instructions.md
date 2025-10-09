@@ -7,70 +7,32 @@ description: Next.js app with SSR/SSG, React Server Components, and App Router
 
 Build SEO-optimized web apps with Next.js using App Router and React Server Components.
 
+**Reference**: [Complete Next.js Tech Stack Documentation](../../../docs/tech-stacks/frontends/nextjs.md)  
+**Scaffold**: Use the `scaffold-frontend-nextjs-service.prompt.md` for new services
+
 ## Naming Convention
 
 `frontend-nextjs-{purpose}` (e.g., `frontend-nextjs-landing`, `frontend-nextjs-docs`)
 
-## Technology Stack
-
-- Next.js 14+ (framework)
-- React 18+ (UI library)
-- TypeScript 5+ (language)
-- App Router (routing)
-- React Server Components
-- Server Actions (mutations)
-- Tailwind CSS (styling)
-- Prisma or Drizzle (ORM)
-- NextAuth.js (authentication)
-- Vercel Analytics
-
-## Directory Structure
+## Project Structure
 
 ```
 services/frontend-nextjs-{purpose}/
 ├── app/
 │   ├── layout.tsx
 │   ├── page.tsx
-│   ├── (auth)/
-│   │   ├── login/
-│   │   └── register/
+│   ├── (auth)/          # Route group
 │   ├── (dashboard)/
-│   │   ├── layout.tsx
-│   │   └── dashboard/
-│   ├── api/
-│   │   └── auth/[...nextauth]/
-│   └── globals.css
+│   └── api/
 ├── components/
-│   ├── ui/
-│   └── forms/
 ├── lib/
-│   ├── db.ts
-│   ├── auth.ts
-│   └── utils.ts
-├── public/
-├── Dockerfile
-├── package.json
-├── next.config.js
-└── tailwind.config.ts
+└── next.config.js
 ```
 
-## App Router
+## Quick Reference Patterns
 
-File-based routing:
-```
-app/
-├── page.tsx                  # /
-├── about/page.tsx            # /about
-├── blog/
-│   ├── page.tsx              # /blog
-│   └── [slug]/page.tsx       # /blog/:slug
-└── (dashboard)/              # Route group (no URL segment)
-    └── settings/page.tsx     # /settings
-```
+### 1. Server Component (Default)
 
-## Server Components
-
-Default in App Router:
 ```typescript
 // app/page.tsx
 async function HomePage() {
@@ -82,9 +44,8 @@ async function HomePage() {
 }
 ```
 
-## Client Components
+### 2. Client Component
 
-Use 'use client' directive:
 ```typescript
 'use client';
 
@@ -96,9 +57,8 @@ export function Counter() {
 }
 ```
 
-## Server Actions
+### 3. Server Actions
 
-Form mutations:
 ```typescript
 // app/actions.ts
 'use server';
@@ -107,9 +67,7 @@ import { revalidatePath } from 'next/cache';
 
 export async function createUser(formData: FormData) {
   const email = formData.get('email');
-  
   await db.user.create({ data: { email } });
-  
   revalidatePath('/users');
   return { success: true };
 }
@@ -127,65 +85,8 @@ function CreateUserForm() {
 }
 ```
 
-## Data Fetching
+### 4. Dynamic Metadata
 
-Async Server Components:
-```typescript
-async function Posts() {
-  const posts = await db.post.findMany();
-  
-  return posts.map(post => <PostCard key={post.id} post={post} />);
-}
-```
-
-Parallel data fetching:
-```typescript
-async function Dashboard() {
-  const [user, posts] = await Promise.all([
-    getUser(),
-    getPosts(),
-  ]);
-  
-  return <>{/* ... */}</>;
-}
-```
-
-## Layouts
-
-Shared UI across routes:
-```typescript
-// app/layout.tsx
-export default function RootLayout({ children }) {
-  return (
-    <html lang="en">
-      <body>
-        <Header />
-        {children}
-        <Footer />
-      </body>
-    </html>
-  );
-}
-```
-
-## Metadata
-
-SEO optimization:
-```typescript
-import { Metadata } from 'next';
-
-export const metadata: Metadata = {
-  title: 'Page Title',
-  description: 'Page description',
-  openGraph: {
-    title: 'Page Title',
-    description: 'Page description',
-    images: ['/og-image.jpg'],
-  },
-};
-```
-
-Dynamic metadata:
 ```typescript
 export async function generateMetadata({ params }): Promise<Metadata> {
   const post = await getPost(params.id);
@@ -193,40 +94,16 @@ export async function generateMetadata({ params }): Promise<Metadata> {
   return {
     title: post.title,
     description: post.excerpt,
+    openGraph: {
+      title: post.title,
+      images: ['/og-image.jpg'],
+    },
   };
 }
 ```
 
-## Authentication
+### 5. Middleware (Auth Protection)
 
-NextAuth.js:
-```typescript
-// app/api/auth/[...nextauth]/route.ts
-import NextAuth from 'next-auth';
-import Credentials from 'next-auth/providers/credentials';
-
-export const authOptions = {
-  providers: [
-    Credentials({
-      credentials: {
-        email: {},
-        password: {},
-      },
-      authorize: async (credentials) => {
-        const user = await verifyCredentials(credentials);
-        return user || null;
-      },
-    }),
-  ],
-};
-
-export const GET = NextAuth(authOptions);
-export const POST = NextAuth(authOptions);
-```
-
-## Middleware
-
-Route protection:
 ```typescript
 // middleware.ts
 import { NextResponse } from 'next/server';
@@ -245,15 +122,18 @@ export const config = {
 };
 ```
 
-## Environment Variables
+## Code Style
 
-```typescript
-// Access server-side
-process.env.DATABASE_URL
-
-// Access client-side (must prefix with NEXT_PUBLIC_)
-process.env.NEXT_PUBLIC_API_URL
-```
+- Use Server Components by default (no 'use client')
+- Add 'use client' only when needed (hooks, interactivity)
+- Server Actions for mutations and form handling
+- File-based routing with App Router
+- Route groups `(group)` for shared layouts without URL segment
+- Parallel data fetching with `Promise.all()`
+- ISR with `next: { revalidate: 3600 }`
+- Dynamic routes with `[slug]` folders
+- Always provide metadata for SEO
+- NextAuth.js for authentication
 
 ## Caching Strategies
 
@@ -262,49 +142,14 @@ process.env.NEXT_PUBLIC_API_URL
 fetch('https://api.example.com/data');
 
 // ISR (revalidate every hour)
-fetch('https://api.example.com/data', {
-  next: { revalidate: 3600 }
-});
+fetch('https://api.example.com/data', { next: { revalidate: 3600 } });
 
 // Dynamic (no cache)
-fetch('https://api.example.com/data', {
-  cache: 'no-store'
-});
+fetch('https://api.example.com/data', { cache: 'no-store' });
 
 // Tag-based revalidation
-fetch('https://api.example.com/data', {
-  next: { tags: ['posts'] }
-});
-
-// In Server Action
-revalidateTag('posts');
-```
-
-## Image Optimization
-
-```typescript
-import Image from 'next/image';
-
-<Image
-  src="/image.jpg"
-  alt="Description"
-  width={800}
-  height={600}
-  priority // for LCP images
-/>
-```
-
-## Testing
-
-```typescript
-// __tests__/page.test.tsx
-import { render, screen } from '@testing-library/react';
-import Home from '@/app/page';
-
-test('renders homepage', () => {
-  render(<Home />);
-  expect(screen.getByText('Welcome')).toBeInTheDocument();
-});
+fetch('https://api.example.com/data', { next: { tags: ['posts'] } });
+revalidateTag('posts'); // In Server Action
 ```
 
 ## Anti-Patterns

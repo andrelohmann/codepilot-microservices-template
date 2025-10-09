@@ -7,24 +7,14 @@ description: React SPA with TypeScript, Vite, TanStack Query, and Tailwind
 
 Build interactive SPAs with React, TypeScript, and modern tooling.
 
+**Reference**: [Complete React Frontend Tech Stack Documentation](../../../docs/tech-stacks/frontends/react.md)  
+**Scaffold**: Use the `scaffold-frontend-react-service.prompt.md` for new services
+
 ## Naming Convention
 
 `frontend-react-{purpose}` (e.g., `frontend-react-dashboard`, `frontend-react-admin`)
 
-## Technology Stack
-
-- React 18+ (UI library)
-- TypeScript 5+ (language)
-- Vite (build tool)
-- React Router (routing)
-- TanStack Query (data fetching)
-- Zustand or Jotai (state management)
-- Tailwind CSS (styling)
-- Axios (HTTP client)
-- Vitest + React Testing Library (testing)
-- Playwright (E2E)
-
-## Directory Structure
+## Project Structure
 
 ```
 services/frontend-react-{purpose}/
@@ -32,31 +22,18 @@ services/frontend-react-{purpose}/
 │   ├── main.tsx
 │   ├── App.tsx
 │   ├── components/
-│   │   ├── ui/
-│   │   └── layout/
 │   ├── pages/
-│   │   ├── Dashboard.tsx
-│   │   └── Login.tsx
 │   ├── hooks/
-│   │   └── useAuth.ts
 │   ├── services/
-│   │   └── api.ts
 │   ├── store/
-│   │   └── auth.store.ts
-│   ├── types/
-│   │   └── index.ts
-│   └── utils/
-├── public/
-├── tests/
-├── Dockerfile
-├── package.json
-├── vite.config.ts
-└── tailwind.config.ts
+│   └── types/
+└── vite.config.ts
 ```
 
-## Routing
+## Quick Reference Patterns
 
-React Router v6:
+### 1. React Router v6
+
 ```typescript
 import { createBrowserRouter } from 'react-router-dom';
 
@@ -72,9 +49,8 @@ const router = createBrowserRouter([
 ]);
 ```
 
-## Data Fetching
+### 2. TanStack Query
 
-TanStack Query:
 ```typescript
 import { useQuery, useMutation } from '@tanstack/react-query';
 
@@ -91,9 +67,8 @@ function Users() {
 }
 ```
 
-## State Management
+### 3. Zustand Store
 
-Zustand for global state:
 ```typescript
 import { create } from 'zustand';
 
@@ -113,38 +88,8 @@ export const useAuthStore = create<AuthStore>((set) => ({
 }));
 ```
 
-## API Client
+### 4. React Hook Form + Zod
 
-Axios with interceptors:
-```typescript
-import axios from 'axios';
-
-const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL,
-});
-
-api.interceptors.request.use((config) => {
-  const token = localStorage.getItem('token');
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
-  return config;
-});
-
-api.interceptors.response.use(
-  (response) => response.data,
-  (error) => {
-    if (error.response?.status === 401) {
-      // Redirect to login
-    }
-    return Promise.reject(error);
-  }
-);
-```
-
-## Forms
-
-React Hook Form + Zod:
 ```typescript
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -169,76 +114,16 @@ function LoginForm() {
 }
 ```
 
-## Styling
+## Code Style
 
-Tailwind with custom components:
-```typescript
-const Button = ({ variant = 'primary', children, ...props }) => (
-  <button
-    className={cn(
-      'px-4 py-2 rounded-md font-medium',
-      variant === 'primary' && 'bg-blue-600 text-white hover:bg-blue-700',
-      variant === 'secondary' && 'bg-gray-200 text-gray-900 hover:bg-gray-300'
-    )}
-    {...props}
-  >
-    {children}
-  </button>
-);
-```
-
-## Testing
-
-Component tests:
-```typescript
-import { render, screen } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
-
-test('login form submits', async () => {
-  const onSubmit = vi.fn();
-  render(<LoginForm onSubmit={onSubmit} />);
-  
-  await userEvent.type(screen.getByLabelText('Email'), 'test@example.com');
-  await userEvent.type(screen.getByLabelText('Password'), 'password123');
-  await userEvent.click(screen.getByRole('button', { name: /login/i }));
-  
-  expect(onSubmit).toHaveBeenCalled();
-});
-```
-
-## Environment Variables
-
-```typescript
-// vite-env.d.ts
-interface ImportMetaEnv {
-  readonly VITE_API_URL: string;
-  readonly VITE_APP_NAME: string;
-}
-```
-
-```bash
-# .env.example
-VITE_API_URL=http://localhost:8000
-VITE_APP_NAME=My App
-```
-
-## Build Optimization
-
-```typescript
-// vite.config.ts
-export default defineConfig({
-  build: {
-    rollupOptions: {
-      output: {
-        manualChunks: {
-          vendor: ['react', 'react-dom', 'react-router-dom'],
-          ui: ['@tanstack/react-query', 'zustand'],
-        },
-      },
-    },
-  },
-});
-```
+- Use React Router v6 for routing with nested routes
+- TanStack Query for all server state management
+- Zustand or Jotai for global client state
+- React Hook Form + Zod for form validation
+- Tailwind CSS for styling
+- Axios with interceptors for API calls
+- Always handle loading and error states
+- Memoize expensive computations with useMemo
 
 ## Anti-Patterns
 
